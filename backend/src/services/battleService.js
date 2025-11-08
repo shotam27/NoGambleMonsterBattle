@@ -265,12 +265,13 @@ function processMoves(battle) {
     // Process each move
     for (const { name, side, opponent, move } of moveSides) {
       // Skip if attacker fainted or has 0 HP (fainted this turn)
-      if (side.party[side.activeIndex].isFainted || side.party[side.activeIndex].currentHp <= 0) {
+      const attackerMember = side.party[side.activeIndex];
+      if (attackerMember.isFainted || attackerMember.currentHp <= 0) {
+        console.log(`${name}'s monster is fainted or has 0 HP, skipping turn`);
         continue;
       }
       
       // Check if attacker is asleep
-      const attackerMember = side.party[side.activeIndex];
       if (attackerMember.status === 'sleep' && attackerMember.sleepTurnsRemaining > 0) {
         battleLog.push({
           message: `${attackerMember.monsterId.name}は眠っている！`
@@ -279,9 +280,13 @@ function processMoves(battle) {
       }
       
       // Skip if defender already fainted (battle might have ended)
-      if (opponent.party[opponent.activeIndex].isFainted || opponent.party[opponent.activeIndex].currentHp <= 0) {
+      const defenderMember = opponent.party[opponent.activeIndex];
+      if (defenderMember.isFainted || defenderMember.currentHp <= 0) {
         // Only skip if battle is already finished
-        if (battle.status === 'finished') continue;
+        if (battle.status === 'finished') {
+          console.log(`Battle already finished, skipping`);
+          continue;
+        }
       }
       
       // TODO: Process pre-move abilities
@@ -317,14 +322,18 @@ function processMoves(battle) {
       
       // TODO: Process move effects
       
+      // Store names before processing fainting (in case of auto-switch)
+      const playerActiveName = battle.player.party[battle.player.activeIndex].monsterId.name;
+      const opponentActiveName = battle.opponent.party[battle.opponent.activeIndex].monsterId.name;
+      
       // Check for fainting
       const faintResult = processFainting(battle);
       
       if (faintResult.playerFainted) {
-        battleLog.push({ message: `${battle.player.party[battle.player.activeIndex].monsterId.name}はひんしになった！` });
+        battleLog.push({ message: `${playerActiveName}はひんしになった！` });
       }
       if (faintResult.opponentFainted) {
-        battleLog.push({ message: `${battle.opponent.party[battle.opponent.activeIndex].monsterId.name}はひんしになった！` });
+        battleLog.push({ message: `${opponentActiveName}はひんしになった！` });
       }
       
       // If battle finished or requires switch, stop processing moves
