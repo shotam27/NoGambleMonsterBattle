@@ -17,6 +17,15 @@ const partyMemberSchema = new mongoose.Schema({
   isFainted: {
     type: Boolean,
     default: false
+  },
+  status: {
+    type: String,
+    enum: ['none', 'poison', 'paralysis', 'sleep'],
+    default: 'none'
+  },
+  sleepTurnsRemaining: {
+    type: Number,
+    default: 0
   }
 }, { _id: false });
 

@@ -25,8 +25,13 @@ const moveSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
-    enum: ['physical', 'magical'],
+    enum: ['physical', 'magical', 'status'],
     default: 'physical'
+  },
+  statusEffect: {
+    type: String,
+    enum: ['poison', 'paralysis', 'sleep'],
+    required: false
   }
 });
 

@@ -1,114 +1,120 @@
 [
   {
     "name": "ファイロ",
-    "type": ["fire"],
+    "type": [
+      "fire"
+    ],
     "stats": {
-      "hp": 120,
-      "attack": 100,
-      "defense": 70,
-      "magicAttack": 90,
+      "hp": 110,
+      "attack": 140,
+      "defense": 60,
+      "magicAttack": 130,
       "magicDefense": 70,
-      "speed": 150
+      "speed": 180
     },
     "moves": [
       {
         "id": "fire_blast",
         "name": "火炎放射",
         "type": "fire",
-        "power": 60,
-        "priority": 1,
+        "power": 100,
+        "priority": 2,
         "category": "magical"
       },
       {
         "id": "fire_strike",
         "name": "炎の打撃",
         "type": "fire",
-        "power": 55,
-        "priority": 1,
+        "power": 80,
+        "priority": 2,
         "category": "physical"
       },
       {
         "id": "quick_attack",
         "name": "電光石火",
         "type": "fire",
-        "power": 50,
-        "priority": 5,
+        "power": 85,
+        "priority": 2,
         "category": "physical"
       }
     ]
   },
   {
     "name": "アクアス",
-    "type": ["water"],
+    "type": [
+      "water"
+    ],
     "stats": {
-      "hp": 130,
+      "hp": 150,
       "attack": 80,
-      "defense": 90,
+      "defense": 100,
       "magicAttack": 70,
-      "magicDefense": 100,
-      "speed": 130
+      "magicDefense": 140,
+      "speed": 150
     },
     "moves": [
       {
         "id": "water_gun",
         "name": "水鉄砲",
         "type": "water",
-        "power": 60,
-        "priority": 1,
+        "power": 100,
+        "priority": 2,
         "category": "magical"
       },
       {
         "id": "aqua_tail",
         "name": "アクアテール",
         "type": "water",
-        "power": 55,
-        "priority": 1,
+        "power": 80,
+        "priority": 2,
         "category": "physical"
       },
       {
         "id": "water_pulse",
         "name": "水の波動",
         "type": "water",
-        "power": 50,
-        "priority": 1,
+        "power": 85,
+        "priority": 2,
         "category": "magical"
       }
     ]
   },
   {
     "name": "グラスリー",
-    "type": ["grass"],
+    "type": [
+      "grass"
+    ],
     "stats": {
-      "hp": 125,
-      "attack": 75,
-      "defense": 100,
-      "magicAttack": 100,
-      "magicDefense": 110,
-      "speed": 90
+      "hp": 130,
+      "attack": 70,
+      "defense": 120,
+      "magicAttack": 120,
+      "magicDefense": 130,
+      "speed": 80
     },
     "moves": [
       {
         "id": "vine_whip",
         "name": "つるのムチ",
         "type": "grass",
-        "power": 55,
-        "priority": 1,
+        "power": 80,
+        "priority": 2,
         "category": "physical"
       },
       {
         "id": "leaf_blade",
         "name": "リーフブレード",
         "type": "grass",
-        "power": 60,
-        "priority": 1,
+        "power": 100,
+        "priority": 2,
         "category": "physical"
       },
       {
         "id": "grass_knot",
         "name": "草結び",
         "type": "grass",
-        "power": 50,
-        "priority": 1,
+        "power": 85,
+        "priority": 2,
         "category": "magical"
       }
     ]
@@ -120,10 +126,10 @@
       "light"
     ],
     "stats": {
-      "hp": 110,
-      "attack": 100,
+      "hp": 100,
+      "attack": 130,
       "defense": 50,
-      "magicAttack": 120,
+      "magicAttack": 150,
       "magicDefense": 60,
       "speed": 160
     },
@@ -132,138 +138,145 @@
         "id": "fire_blast",
         "name": "火炎放射",
         "type": "fire",
-        "power": 60,
-        "priority": 1,
+        "power": 100,
+        "priority": 2,
         "category": "magical"
       },
       {
         "id": "light_pulse",
         "name": "ひかりのはどう",
         "type": "light",
-        "power": 60,
-        "priority": 1,
+        "power": 100,
+        "priority": 2,
         "category": "magical"
       },
       {
         "id": "quick_attack",
         "name": "電光石火",
         "type": "fire",
-        "power": 50,
-        "priority": 5,
+        "power": 85,
+        "priority": 2,
         "category": "physical"
       }
     ]
   },
   {
     "name": "ハイドロン",
-    "type": ["water","dark"],
+    "type": [
+      "water",
+      "dark"
+    ],
     "stats": {
-      "hp": 140,
-      "attack": 70,
-      "defense": 80,
-      "magicAttack": 100,
-      "magicDefense": 120,
-      "speed": 90
+      "hp": 160,
+      "attack": 60,
+      "defense": 90,
+      "magicAttack": 110,
+      "magicDefense": 150,
+      "speed": 70
     },
     "moves": [
       {
         "id": "water_gun",
         "name": "水鉄砲",
         "type": "water",
-        "power": 60,
-        "priority": 1,
+        "power": 100,
+        "priority": 2,
         "category": "magical"
       },
       {
         "id": "dark_pulse",
         "name": "やみのはどう",
         "type": "dark",
-        "power": 65,
-        "priority": 1,
+        "power": 120,
+        "priority": 2,
         "category": "magical"
       },
       {
         "id": "water_pulse",
         "name": "水の波動",
         "type": "water",
-        "power": 50,
-        "priority": 1,
+        "power": 85,
+        "priority": 2,
         "category": "magical"
       }
     ]
   },
   {
     "name": "フォレスタ",
-    "type": ["grass"],
+    "type": [
+      "grass"
+    ],
     "stats": {
       "hp": 120,
-      "attack": 80,
-      "defense": 90,
-      "magicAttack": 110,
-      "magicDefense": 120,
-      "speed": 80
+      "attack": 75,
+      "defense": 110,
+      "magicAttack": 140,
+      "magicDefense": 140,
+      "speed": 85
     },
     "moves": [
       {
         "id": "vine_whip",
         "name": "つるのムチ",
         "type": "grass",
-        "power": 55,
-        "priority": 1,
+        "power": 80,
+        "priority": 2,
         "category": "physical"
       },
       {
         "id": "solar_beam",
         "name": "ソーラービーム",
         "type": "grass",
-        "power": 65,
-        "priority": 1,
+        "power": 120,
+        "priority": 2,
         "category": "magical"
       },
       {
         "id": "grass_knot",
         "name": "草結び",
         "type": "grass",
-        "power": 50,
-        "priority": 1,
+        "power": 85,
+        "priority": 2,
         "category": "magical"
       }
     ]
   },
   {
     "name": "ノーマルン",
-    "type": ["normal"],
+    "type": [
+      "normal"
+    ],
     "stats": {
-      "hp": 120,
+      "hp": 130,
       "attack": 120,
-      "defense": 90,
+      "defense": 100,
       "magicAttack": 60,
-      "magicDefense": 110,
-      "speed": 100
+      "magicDefense": 130,
+      "speed": 110
     },
     "moves": [
       {
         "id": "normal_punch",
         "name": "普通パンチ",
         "type": "normal",
-        "power": 65,
-        "priority": 1,
+        "power": 120,
+        "priority": 2,
         "category": "physical"
       },
       {
         "id": "normal_beam",
         "name": "ノーマルビーム",
         "type": "normal",
-        "power": 65,
-        "priority": 1,
+        "power": 120,
+        "priority": 2,
         "category": "magical"
       },
       {
         "id": "grass_knot",
         "name": "草結び",
         "type": "grass",
-        "power": 50,
-        "priority": 1,
+        "power": 85,
+        "priority": 2,
         "category": "magical"
       }
     ]

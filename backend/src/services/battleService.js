@@ -33,6 +33,7 @@ function calculateTypeEffectiveness(moveType, defenderTypes) {
 
 /**
  * Calculate damage based on attack, defense, move power, and type effectiveness
+ * Formula: attackStat * movePower * typeMultiplier / (1.5 * (defenseStat + 120))
  */
 function calculateDamage(attacker, defender, move) {
   const movePower = move.power;
@@ -58,19 +59,27 @@ function calculateDamage(attacker, defender, move) {
   const attackerTypes = Array.isArray(attacker.type) ? attacker.type : [attacker.type];
   const stabBonus = attackerTypes.includes(move.type) ? 1.5 : 1.0;
   
-  // Damage formula: (attack + movePower) - floor(defense/2) * stabBonus * typeMultiplier
-  const baseDamage = (attackPower + movePower) - defense;
-  const damage = Math.max(1, Math.floor(baseDamage * stabBonus * typeMultiplier));
+  // New damage formula: (attackStat * movePower * typeMultiplier * stabBonus) / (1.5 * (defenseStat + 120))
+  const damage = Math.max(1, Math.floor((attackPower * movePower * typeMultiplier * stabBonus) / (1.5 * (defense + 120))));
   
   return damage;
 }
 
 /**
  * Get speed for sorting (current active monster)
+ * Accounts for paralysis status effect
  */
 function getSpeed(side, battle) {
-  const activeMonster = side.party[side.activeIndex].monsterId;
-  return activeMonster.stats.speed;
+  const activeMember = side.party[side.activeIndex];
+  const activeMonster = activeMember.monsterId;
+  let speed = activeMonster.stats.speed;
+  
+  // Paralysis halves speed
+  if (activeMember.status === 'paralysis') {
+    speed = Math.floor(speed / 2);
+  }
+  
+  return speed;
 }
 
 /**
@@ -108,17 +117,33 @@ function processSwitches(battle) {
 }
 
 /**
- * Process move damage
+ * Process move damage and status effects
  */
 function processDamage(battle, attacker, defender, move) {
   const attackerMonster = attacker.party[attacker.activeIndex].monsterId;
   const defenderMember = defender.party[defender.activeIndex];
   const defenderMonster = defenderMember.monsterId;
   
-  const damage = calculateDamage(attackerMonster, defenderMonster, move);
+  let damage = 0;
   
-  // Apply damage
-  defenderMember.currentHp = Math.max(0, defenderMember.currentHp - damage);
+  // Status moves don't deal damage but inflict status
+  if (move.category === 'status' && move.statusEffect) {
+    // Only apply if target doesn't already have a status
+    if (defenderMember.status === 'none') {
+      defenderMember.status = move.statusEffect;
+      
+      // Set sleep turns if applying sleep
+      if (move.statusEffect === 'sleep') {
+        defenderMember.sleepTurnsRemaining = 2;
+      }
+    }
+  } else {
+    // Regular damage move
+    damage = calculateDamage(attackerMonster, defenderMonster, move);
+    
+    // Apply damage
+    defenderMember.currentHp = Math.max(0, defenderMember.currentHp - damage);
+  }
   
   return damage;
 }
@@ -206,7 +231,7 @@ function processMoves(battle) {
           side: battle.player, 
           opponent: battle.opponent,
           move, 
-          speed: playerMonster.stats.speed,
+          speed: getSpeed(battle.player, battle),
           priority: move.priority || 0
         });
       }
@@ -223,7 +248,7 @@ function processMoves(battle) {
           side: battle.opponent, 
           opponent: battle.player,
           move, 
-          speed: opponentMonster.stats.speed,
+          speed: getSpeed(battle.opponent, battle),
           priority: move.priority || 0
         });
       }
@@ -244,6 +269,15 @@ function processMoves(battle) {
         continue;
       }
       
+      // Check if attacker is asleep
+      const attackerMember = side.party[side.activeIndex];
+      if (attackerMember.status === 'sleep' && attackerMember.sleepTurnsRemaining > 0) {
+        battleLog.push({
+          message: `${attackerMember.monsterId.name}は眠っている！`
+        });
+        continue;
+      }
+      
       // Skip if defender already fainted (battle might have ended)
       if (opponent.party[opponent.activeIndex].isFainted || opponent.party[opponent.activeIndex].currentHp <= 0) {
         // Only skip if battle is already finished
@@ -252,13 +286,27 @@ function processMoves(battle) {
       
       // TODO: Process pre-move abilities
       
-      // Process damage
+      // Process damage or status effect
       const damage = processDamage(battle, side, opponent, move);
-      battleLog.push({
-        attacker: name,
-        move: move.name,
-        damage
-      });
+      
+      // Add move to battle log
+      if (move.category === 'status') {
+        const defenderMember = opponent.party[opponent.activeIndex];
+        const statusName = move.statusEffect === 'poison' ? '毒' : 
+                          move.statusEffect === 'paralysis' ? '麻痺' : '眠り';
+        battleLog.push({
+          attacker: name,
+          move: move.name,
+          statusInflicted: statusName,
+          targetStatus: defenderMember.status
+        });
+      } else {
+        battleLog.push({
+          attacker: name,
+          move: move.name,
+          damage
+        });
+      }
       
       // Update lastMove
       battle.lastMove = {
@@ -293,13 +341,78 @@ function processMoves(battle) {
 }
 
 /**
- * Process status effects (poison, weather, etc.)
- * Currently not implemented - placeholder for future
+ * Process status effects (poison, sleep countdown, etc.)
  */
 function processStatusEffects(battle) {
-  // TODO: Implement status effect damage
-  // For now, just return empty log
-  return [];
+  const battleLog = [];
+  
+  // Process player's active monster status
+  const playerMember = battle.player.party[battle.player.activeIndex];
+  if (!playerMember.isFainted && playerMember.currentHp > 0) {
+    // Poison damage
+    if (playerMember.status === 'poison') {
+      const poisonDamage = Math.max(1, Math.floor(playerMember.maxHp / 8));
+      playerMember.currentHp = Math.max(0, playerMember.currentHp - poisonDamage);
+      battleLog.push({
+        message: `${playerMember.monsterId.name}は毒のダメージを受けた！`,
+        damage: poisonDamage
+      });
+      
+      // Check if fainted from poison
+      if (playerMember.currentHp <= 0) {
+        const faintResult = processFainting(battle);
+        if (faintResult.playerFainted) {
+          battleLog.push({ message: `${playerMember.monsterId.name}はひんしになった！` });
+        }
+      }
+    }
+    
+    // Decrease sleep turns
+    if (playerMember.status === 'sleep' && playerMember.sleepTurnsRemaining > 0) {
+      playerMember.sleepTurnsRemaining -= 1;
+      if (playerMember.sleepTurnsRemaining <= 0) {
+        playerMember.status = 'none';
+        battleLog.push({
+          message: `${playerMember.monsterId.name}は目を覚ました！`
+        });
+      }
+    }
+  }
+  
+  // Process opponent's active monster status
+  const opponentMember = battle.opponent.party[battle.opponent.activeIndex];
+  if (!opponentMember.isFainted && opponentMember.currentHp > 0) {
+    // Poison damage
+    if (opponentMember.status === 'poison') {
+      const poisonDamage = Math.max(1, Math.floor(opponentMember.maxHp / 8));
+      opponentMember.currentHp = Math.max(0, opponentMember.currentHp - poisonDamage);
+      battleLog.push({
+        message: `${opponentMember.monsterId.name}は毒のダメージを受けた！`,
+        damage: poisonDamage
+      });
+      
+      // Check if fainted from poison
+      if (opponentMember.currentHp <= 0) {
+        const faintResult = processFainting(battle);
+        if (faintResult.opponentFainted) {
+          battleLog.push({ message: `${opponentMember.monsterId.name}はひんしになった！` });
+        }
+      }
+    }
+    
+    // Decrease sleep turns
+    if (opponentMember.status === 'sleep' && opponentMember.sleepTurnsRemaining > 0) {
+      opponentMember.sleepTurnsRemaining -= 1;
+      if (opponentMember.sleepTurnsRemaining <= 0) {
+        opponentMember.status = 'none';
+        battleLog.push({
+          message: `${opponentMember.monsterId.name}は目を覚ました！`
+        });
+      }
+    }
+  }
+  
+  return battleLog;
 }
 
 /**
