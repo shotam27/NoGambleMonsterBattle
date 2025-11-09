@@ -26,11 +26,23 @@ const partyMemberSchema = new mongoose.Schema({
   sleepTurnsRemaining: {
     type: Number,
     default: 0
+  },
+  statModifiers: {
+    attack: { type: Number, default: 0, min: -2, max: 2 },
+    defense: { type: Number, default: 0, min: -2, max: 2 },
+    magicAttack: { type: Number, default: 0, min: -2, max: 2 },
+    magicDefense: { type: Number, default: 0, min: -2, max: 2 },
+    speed: { type: Number, default: 0, min: -2, max: 2 }
   }
-}, { _id: false });
+}, { 
+  _id: false,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
 
 const battleSchema = new mongoose.Schema({
   player: {
+    userId: String, // For PvP detection
     party: [partyMemberSchema],
     activeIndex: {
       type: Number,
@@ -47,6 +59,7 @@ const battleSchema = new mongoose.Schema({
     }
   },
   opponent: {
+    userId: String, // For PvP detection
     party: [partyMemberSchema],
     activeIndex: {
       type: Number,
@@ -71,6 +84,11 @@ const battleSchema = new mongoose.Schema({
     enum: ['active', 'finished', 'waiting_for_actions', 'waiting_for_switch'],
     default: 'waiting_for_actions'
   },
+  battleType: {
+    type: String,
+    enum: ['ai', 'pvp'],
+    default: 'ai'
+  },
   winner: {
     type: String,
     enum: ['player', 'opponent', 'draw'],
@@ -82,7 +100,9 @@ const battleSchema = new mongoose.Schema({
     damage: Number
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
 });
 
 module.exports = mongoose.model('Battle', battleSchema);

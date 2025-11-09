@@ -4,6 +4,7 @@ const battleService = require('../services/battleService');
 
 // Start a new battle
 exports.startBattle = async (req, res) => {
+  console.log('====== BATTLECONTROLLER.JS - NEW VERSION LOADED ======');
   try {
     const { playerMonsterIds, opponentMonsterIds } = req.body;
 
@@ -28,7 +29,14 @@ exports.startBattle = async (req, res) => {
         monsterId: id,
         currentHp: monster.stats.hp,
         maxHp: monster.stats.hp,
-        isFainted: false
+        isFainted: false,
+        statModifiers: {
+          attack: 0,
+          defense: 0,
+          magicAttack: 0,
+          magicDefense: 0,
+          speed: 0
+        }
       };
     });
 
@@ -38,7 +46,14 @@ exports.startBattle = async (req, res) => {
         monsterId: id,
         currentHp: monster.stats.hp,
         maxHp: monster.stats.hp,
-        isFainted: false
+        isFainted: false,
+        statModifiers: {
+          attack: 0,
+          defense: 0,
+          magicAttack: 0,
+          magicDefense: 0,
+          speed: 0
+        }
       };
     });
 
@@ -65,15 +80,15 @@ exports.startBattle = async (req, res) => {
       { path: 'opponent.party.monsterId' }
     ]);
 
+    const battleObj = battle.toObject();
+    console.log('Sending battle data:', JSON.stringify({
+      firstPlayerMember: battleObj.player.party[0],
+      hasStatModifiers: !!battleObj.player.party[0].statModifiers
+    }, null, 2));
+
     res.status(201).json({
       battleId: battle._id,
-      battle: {
-        _id: battle._id,
-        player: battle.player,
-        opponent: battle.opponent,
-        turn: battle.turn,
-        status: battle.status
-      }
+      battle: battleObj
     });
   } catch (error) {
     res.status(500).json({ error: true, message: error.message });
@@ -132,8 +147,11 @@ exports.selectAction = async (req, res) => {
         { path: 'opponent.party.monsterId' }
       ]);
 
+      const battleObj = turnResult.battle.toObject();
+      console.log('After turn - Player statModifiers:', battleObj.player.party[0].statModifiers);
+
       return res.status(200).json({
-        battle: turnResult.battle,
+        battle: battleObj,
         battleLog: turnResult.battleLog,
         requiresSwitch: turnResult.requiresSwitch,
         message: 'Turn executed'
@@ -141,7 +159,7 @@ exports.selectAction = async (req, res) => {
     }
 
     res.status(200).json({
-      battle: result.battle,
+      battle: result.battle.toObject(),
       waitingForOpponent: true,
       message: 'Action selected, waiting for opponent'
     });
@@ -163,15 +181,7 @@ exports.getBattleStatus = async (req, res) => {
       return res.status(404).json({ error: true, message: 'Battle not found' });
     }
 
-    res.status(200).json({
-      _id: battle._id,
-      player: battle.player,
-      opponent: battle.opponent,
-      turn: battle.turn,
-      status: battle.status,
-      winner: battle.winner,
-      lastMove: battle.lastMove
-    });
+    res.status(200).json(battle.toObject());
   } catch (error) {
     res.status(500).json({ error: true, message: error.message });
   }
@@ -206,6 +216,18 @@ exports.switchMonster = async (req, res) => {
     // Switch active monster
     battle.player.activeIndex = newIndex;
     
+    // Reset stat modifiers when switching in
+    const switchedInMember = battle.player.party[newIndex];
+    if (!switchedInMember.statModifiers) {
+      switchedInMember.statModifiers = { attack: 0, defense: 0, magicAttack: 0, magicDefense: 0, speed: 0 };
+    } else {
+      switchedInMember.statModifiers.attack = 0;
+      switchedInMember.statModifiers.defense = 0;
+      switchedInMember.statModifiers.magicAttack = 0;
+      switchedInMember.statModifiers.magicDefense = 0;
+      switchedInMember.statModifiers.speed = 0;
+    }
+    
     // If this was a forced switch, change status back to waiting for actions
     if (battle.status === 'waiting_for_switch') {
       battle.status = 'waiting_for_actions';
@@ -220,13 +242,7 @@ exports.switchMonster = async (req, res) => {
     ]);
 
     res.status(200).json({
-      battle: {
-        _id: battle._id,
-        player: battle.player,
-        opponent: battle.opponent,
-        turn: battle.turn,
-        status: battle.status
-      }
+      battle: battle.toObject()
     });
   } catch (error) {
     res.status(500).json({ error: true, message: error.message });

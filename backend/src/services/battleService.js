@@ -32,24 +32,39 @@ function calculateTypeEffectiveness(moveType, defenderTypes) {
 }
 
 /**
+ * Apply stat modifiers to a stat value
+ * +2: 2x, +1: 1.5x, 0: 1x, -1: 0.75x, -2: 0.5x
+ */
+function applyStatModifier(baseStat, modifier) {
+  const multipliers = {
+    '-2': 0.5,
+    '-1': 0.75,
+    '0': 1.0,
+    '1': 1.5,
+    '2': 2.0
+  };
+  return Math.floor(baseStat * (multipliers[modifier] || 1.0));
+}
+
+/**
  * Calculate damage based on attack, defense, move power, and type effectiveness
  * Formula: attackStat * movePower * typeMultiplier / (1.5 * (defenseStat + 120))
  */
-function calculateDamage(attacker, defender, move) {
+function calculateDamage(attacker, defender, move, attackerMember, defenderMember) {
   const movePower = move.power;
   
   // 物理技か特殊技かで使用するステータスを変更
   let attackPower, defense;
   if (move.category === 'physical') {
-    attackPower = attacker.stats.attack;
-    defense = defender.stats.defense;
+    attackPower = applyStatModifier(attacker.stats.attack, attackerMember.statModifiers?.attack || 0);
+    defense = applyStatModifier(defender.stats.defense, defenderMember.statModifiers?.defense || 0);
   } else if (move.category === 'magical') {
-    attackPower = attacker.stats.magicAttack;
-    defense = defender.stats.magicDefense;
+    attackPower = applyStatModifier(attacker.stats.magicAttack, attackerMember.statModifiers?.magicAttack || 0);
+    defense = applyStatModifier(defender.stats.magicDefense, defenderMember.statModifiers?.magicDefense || 0);
   } else {
     // デフォルトは物理
-    attackPower = attacker.stats.attack;
-    defense = defender.stats.defense;
+    attackPower = applyStatModifier(attacker.stats.attack, attackerMember.statModifiers?.attack || 0);
+    defense = applyStatModifier(defender.stats.defense, defenderMember.statModifiers?.defense || 0);
   }
   
   // Get type multiplier (supports dual types, defaults to 1.0 for undefined combinations)
@@ -67,12 +82,12 @@ function calculateDamage(attacker, defender, move) {
 
 /**
  * Get speed for sorting (current active monster)
- * Accounts for paralysis status effect
+ * Accounts for paralysis status effect and speed modifiers
  */
 function getSpeed(side, battle) {
   const activeMember = side.party[side.activeIndex];
   const activeMonster = activeMember.monsterId;
-  let speed = activeMonster.stats.speed;
+  let speed = applyStatModifier(activeMonster.stats.speed, activeMember.statModifiers?.speed || 0);
   
   // Paralysis halves speed
   if (activeMember.status === 'paralysis') {
@@ -110,6 +125,18 @@ function processSwitches(battle) {
       // Validate switch target
       if (newIndex >= 0 && newIndex < 3 && !side.data.party[newIndex].isFainted) {
         side.data.activeIndex = newIndex;
+        
+        // Reset stat modifiers when switching in
+        const switchedInMember = side.data.party[newIndex];
+        if (!switchedInMember.statModifiers) {
+          switchedInMember.statModifiers = { attack: 0, defense: 0, magicAttack: 0, magicDefense: 0, speed: 0 };
+        } else {
+          switchedInMember.statModifiers.attack = 0;
+          switchedInMember.statModifiers.defense = 0;
+          switchedInMember.statModifiers.magicAttack = 0;
+          switchedInMember.statModifiers.magicDefense = 0;
+          switchedInMember.statModifiers.speed = 0;
+        }
         // TODO: Trigger landing abilities if implemented
       }
     }
@@ -120,16 +147,23 @@ function processSwitches(battle) {
  * Process move damage and status effects
  */
 function processDamage(battle, attacker, defender, move) {
+  console.log('processDamage called with move:', JSON.stringify({
+    name: move.name,
+    category: move.category,
+    hasStatChange: !!move.statChange,
+    statChange: move.statChange
+  }));
+  
   const attackerMonster = attacker.party[attacker.activeIndex].monsterId;
   const defenderMember = defender.party[defender.activeIndex];
   const defenderMonster = defenderMember.monsterId;
   
   let damage = 0;
   
-  // Status moves don't deal damage but inflict status
-  if (move.category === 'status' && move.statusEffect) {
-    // Only apply if target doesn't already have a status
-    if (defenderMember.status === 'none') {
+  // Status moves don't deal damage but inflict status or stat changes
+  if (move.category === 'status') {
+    // Apply status effect
+    if (move.statusEffect && defenderMember.status === 'none') {
       defenderMember.status = move.statusEffect;
       
       // Set sleep turns if applying sleep
@@ -137,12 +171,62 @@ function processDamage(battle, attacker, defender, move) {
         defenderMember.sleepTurnsRemaining = 2;
       }
     }
+    
+    // Apply stat modifiers
+    if (move.statChange) {
+      const target = move.statChange.target === 'self' ? attacker.party[attacker.activeIndex] : defenderMember;
+      const stat = move.statChange.stat;
+      const stages = move.statChange.stages;
+      
+      console.log(`Applying stat change:`, {
+        move: move.name,
+        target: move.statChange.target,
+        stat,
+        stages,
+        beforeStatModifiers: target.statModifiers
+      });
+      
+      if (!target.statModifiers) {
+        target.statModifiers = { attack: 0, defense: 0, magicAttack: 0, magicDefense: 0, speed: 0 };
+      }
+      
+      // Clamp to -2 to +2 range
+      target.statModifiers[stat] = Math.max(-2, Math.min(2, (target.statModifiers[stat] || 0) + stages));
+      
+      console.log(`After stat change:`, {
+        afterStatModifiers: target.statModifiers
+      });
+    }
   } else {
     // Regular damage move
-    damage = calculateDamage(attackerMonster, defenderMonster, move);
+    damage = calculateDamage(attackerMonster, defenderMonster, move, attacker.party[attacker.activeIndex], defenderMember);
     
     // Apply damage
     defenderMember.currentHp = Math.max(0, defenderMember.currentHp - damage);
+    
+    // Apply status effect if move has statusEffect (even for damage moves)
+    if (move.statusEffect && defenderMember.status === 'none') {
+      defenderMember.status = move.statusEffect;
+      
+      // Set sleep turns if applying sleep
+      if (move.statusEffect === 'sleep') {
+        defenderMember.sleepTurnsRemaining = 2;
+      }
+    }
+    
+    // Apply stat modifiers on damage moves
+    if (move.statChange) {
+      const target = move.statChange.target === 'self' ? attacker.party[attacker.activeIndex] : defenderMember;
+      const stat = move.statChange.stat;
+      const stages = move.statChange.stages;
+      
+      if (!target.statModifiers) {
+        target.statModifiers = { attack: 0, defense: 0, magicAttack: 0, magicDefense: 0, speed: 0 };
+      }
+      
+      // Clamp to -2 to +2 range
+      target.statModifiers[stat] = Math.max(-2, Math.min(2, (target.statModifiers[stat] || 0) + stages));
+    }
   }
   
   return damage;
@@ -178,9 +262,22 @@ function processFainting(battle) {
   
   // Check opponent's active monster
   const opponentActive = battle.opponent.party[battle.opponent.activeIndex];
+  console.log('Checking opponent for fainting:', {
+    activeIndex: battle.opponent.activeIndex,
+    monsterName: opponentActive.monsterId?.name,
+    currentHp: opponentActive.currentHp,
+    isFainted: opponentActive.isFainted
+  });
+  
   if (opponentActive.currentHp <= 0 && !opponentActive.isFainted) {
     opponentActive.isFainted = true;
     results.opponentFainted = true;
+    console.log('Opponent monster fainted:', {
+      name: opponentActive.monsterId?.name,
+      activeIndex: battle.opponent.activeIndex,
+      isFainted: opponentActive.isFainted,
+      currentHp: opponentActive.currentHp
+    });
     
     // Check if all opponent monsters fainted
     const allOpponentFainted = battle.opponent.party.every(m => m.isFainted);
@@ -192,17 +289,54 @@ function processFainting(battle) {
     
     results.requiresOpponentSwitch = true;
     
-    // AI auto-switch to next available monster
-    const nextIndex = battle.opponent.party.findIndex(m => !m.isFainted);
-    if (nextIndex !== -1) {
-      battle.opponent.activeIndex = nextIndex;
-      results.requiresOpponentSwitch = false; // AI already switched
+    // For PvP battles (both have userId), both players must manually switch
+    // For AI battles (opponent has no userId), AI auto-switches
+    const isPvP = battle.player.userId && battle.opponent.userId;
+    
+    console.log('PvP check:', {
+      isPvP,
+      playerUserId: battle.player.userId,
+      opponentUserId: battle.opponent.userId
+    });
+    
+    if (!isPvP) {
+      console.log('AI battle detected - auto-switching opponent');
+      // AI auto-switch to next available monster
+      const nextIndex = battle.opponent.party.findIndex(m => !m.isFainted);
+      if (nextIndex !== -1) {
+        battle.opponent.activeIndex = nextIndex;
+        results.requiresOpponentSwitch = false; // AI already switched
+        console.log('AI auto-switched to index:', nextIndex);
+        
+        // Reset stat modifiers when auto-switching in
+        const switchedInMember = battle.opponent.party[nextIndex];
+        if (!switchedInMember.statModifiers) {
+          switchedInMember.statModifiers = { attack: 0, defense: 0, magicAttack: 0, magicDefense: 0, speed: 0 };
+        } else {
+          switchedInMember.statModifiers.attack = 0;
+          switchedInMember.statModifiers.defense = 0;
+          switchedInMember.statModifiers.magicAttack = 0;
+          switchedInMember.statModifiers.magicDefense = 0;
+          switchedInMember.statModifiers.speed = 0;
+        }
+      }
     }
   }
   
-  // If battle not finished and player requires switch, set status
-  if (battle.status !== 'finished' && results.requiresPlayerSwitch) {
+  // If battle not finished and any player requires switch, set status
+  console.log('Final fainting check:', {
+    battleStatus: battle.status,
+    requiresPlayerSwitch: results.requiresPlayerSwitch,
+    requiresOpponentSwitch: results.requiresOpponentSwitch,
+    willSetWaitingForSwitch: battle.status !== 'finished' && (results.requiresPlayerSwitch || results.requiresOpponentSwitch)
+  });
+  
+  if (battle.status !== 'finished' && (results.requiresPlayerSwitch || results.requiresOpponentSwitch)) {
     battle.status = 'waiting_for_switch';
+    console.log('Setting battle status to waiting_for_switch:', {
+      requiresPlayerSwitch: results.requiresPlayerSwitch,
+      requiresOpponentSwitch: results.requiresOpponentSwitch
+    });
   }
   
   return results;
@@ -212,6 +346,7 @@ function processFainting(battle) {
  * Process moves in priority and speed order
  */
 function processMoves(battle) {
+  console.log('====== BATTLESERVICE.JS LOADED - NEW VERSION ======');
   try {
     const battleLog = [];
     
@@ -226,13 +361,24 @@ function processMoves(battle) {
       const move = playerMonster.moves.find(m => m.id === battle.player.selectedAction.moveId);
       console.log('Player selected move:', battle.player.selectedAction.moveId, 'Found:', move);
       if (move) {
+        console.log('Converting move to plain object...');
+        // Convert to plain object to ensure all nested properties are accessible
+        let plainMove;
+        try {
+          plainMove = JSON.parse(JSON.stringify(move));
+          console.log('Plain move object:', plainMove);
+          console.log('Has statChange:', !!plainMove.statChange);
+        } catch (e) {
+          console.error('Error converting move:', e);
+          plainMove = move;
+        }
         moveSides.push({ 
           name: 'player', 
           side: battle.player, 
           opponent: battle.opponent,
-          move, 
+          move: plainMove, 
           speed: getSpeed(battle.player, battle),
-          priority: move.priority || 0
+          priority: plainMove.priority || 0
         });
       }
     }
@@ -243,29 +389,65 @@ function processMoves(battle) {
       const move = opponentMonster.moves.find(m => m.id === battle.opponent.selectedAction.moveId);
       console.log('Opponent selected move:', battle.opponent.selectedAction.moveId, 'Found:', move);
       if (move) {
+        console.log('Converting opponent move to plain object...');
+        // Convert to plain object to ensure all nested properties are accessible
+        let plainMove;
+        try {
+          plainMove = JSON.parse(JSON.stringify(move));
+          console.log('Plain opponent move object:', plainMove);
+          console.log('Opponent has statChange:', !!plainMove.statChange);
+        } catch (e) {
+          console.error('Error converting opponent move:', e);
+          plainMove = move;
+        }
         moveSides.push({ 
           name: 'opponent', 
           side: battle.opponent, 
           opponent: battle.player,
-          move, 
+          move: plainMove, 
           speed: getSpeed(battle.opponent, battle),
-          priority: move.priority || 0
+          priority: plainMove.priority || 0
         });
       }
     }
     
     console.log('Move sides:', moveSides.length);
     
+    try {
+      console.log('About to log move sides details...');
+      const details = moveSides.map(ms => ({
+        name: ms.name,
+        move: ms.move.name,
+        hasStatChange: !!ms.move.statChange,
+        statChange: ms.move.statChange
+      }));
+      console.log('Move sides details:', details);
+    } catch (mapError) {
+      console.error('Error mapping move sides:', mapError);
+    }
+    
     // Sort by priority (descending), then by speed (descending)
+    console.log('About to sort...');
     moveSides.sort((a, b) => {
       if (b.priority !== a.priority) return b.priority - a.priority;
       return b.speed - a.speed;
     });
+    console.log('Sort complete');
+    
+    console.log('Starting to process moves...');
     
     // Process each move
     for (const { name, side, opponent, move } of moveSides) {
+      console.log(`Processing move for ${name}:`, move.name);
       // Skip if attacker fainted or has 0 HP (fainted this turn)
       const attackerMember = side.party[side.activeIndex];
+      console.log(`Checking ${name} attacker:`, {
+        activeIndex: side.activeIndex,
+        isFainted: attackerMember.isFainted,
+        currentHp: attackerMember.currentHp,
+        monsterName: attackerMember.monsterId?.name
+      });
+      
       if (attackerMember.isFainted || attackerMember.currentHp <= 0) {
         console.log(`${name}'s monster is fainted or has 0 HP, skipping turn`);
         continue;
@@ -294,6 +476,11 @@ function processMoves(battle) {
       // Process damage or status effect
       const damage = processDamage(battle, side, opponent, move);
       
+      console.log(`After processDamage for ${move.name}:`, {
+        attackerStatModifiers: side.party[side.activeIndex].statModifiers,
+        defenderStatModifiers: opponent.party[opponent.activeIndex].statModifiers
+      });
+      
       // Add move to battle log
       if (move.category === 'status') {
         const defenderMember = opponent.party[opponent.activeIndex];
@@ -321,25 +508,20 @@ function processMoves(battle) {
       };
       
       // TODO: Process move effects
-      
-      // Store names before processing fainting (in case of auto-switch)
-      const playerActiveName = battle.player.party[battle.player.activeIndex].monsterId.name;
-      const opponentActiveName = battle.opponent.party[battle.opponent.activeIndex].monsterId.name;
-      
-      // Check for fainting
-      const faintResult = processFainting(battle);
-      
-      if (faintResult.playerFainted) {
-        battleLog.push({ message: `${playerActiveName}はひんしになった！` });
-      }
-      if (faintResult.opponentFainted) {
-        battleLog.push({ message: `${opponentActiveName}はひんしになった！` });
-      }
-      
-      // If battle finished or requires switch, stop processing moves
-      if (battle.status === 'finished' || battle.status === 'waiting_for_switch') {
-        break;
-      }
+    }
+    
+    // Check for fainting AFTER all moves are processed
+    // Store names before processing fainting (in case of auto-switch)
+    const playerActiveName = battle.player.party[battle.player.activeIndex].monsterId.name;
+    const opponentActiveName = battle.opponent.party[battle.opponent.activeIndex].monsterId.name;
+    
+    const faintResult = processFainting(battle);
+    
+    if (faintResult.playerFainted) {
+      battleLog.push({ message: `${playerActiveName}はひんしになった！` });
+    }
+    if (faintResult.opponentFainted) {
+      battleLog.push({ message: `${opponentActiveName}はひんしになった！` });
     }
     
     return battleLog;
@@ -435,7 +617,26 @@ async function executeTurn(battle) {
       playerAction: battle.player.selectedAction,
       opponentAction: battle.opponent.selectedAction,
       playerActiveIndex: battle.player.activeIndex,
-      opponentActiveIndex: battle.opponent.activeIndex
+      opponentActiveIndex: battle.opponent.activeIndex,
+      playerActiveMonster: battle.player.party[battle.player.activeIndex].monsterId?.name,
+      opponentActiveMonster: battle.opponent.party[battle.opponent.activeIndex].monsterId?.name,
+      playerActiveHP: battle.player.party[battle.player.activeIndex].currentHp,
+      opponentActiveHP: battle.opponent.party[battle.opponent.activeIndex].currentHp
+    });
+    
+    console.log('All party members HP:', {
+      player: battle.player.party.map((m, i) => ({
+        index: i,
+        name: m.monsterId?.name,
+        hp: m.currentHp,
+        isFainted: m.isFainted
+      })),
+      opponent: battle.opponent.party.map((m, i) => ({
+        index: i,
+        name: m.monsterId?.name,
+        hp: m.currentHp,
+        isFainted: m.isFainted
+      }))
     });
     
     // Phase 1: Process switches (in speed order)

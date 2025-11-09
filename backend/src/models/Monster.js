@@ -32,6 +32,21 @@ const moveSchema = new mongoose.Schema({
     type: String,
     enum: ['poison', 'paralysis', 'sleep'],
     required: false
+  },
+  statChange: {
+    target: {
+      type: String,
+      enum: ['self', 'opponent']
+    },
+    stat: {
+      type: String,
+      enum: ['attack', 'defense', 'magicAttack', 'magicDefense', 'speed']
+    },
+    stages: {
+      type: Number,
+      min: -2,
+      max: 2
+    }
   }
 });
 
