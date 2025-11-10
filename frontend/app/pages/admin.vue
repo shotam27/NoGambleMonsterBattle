@@ -84,7 +84,7 @@
           <div class="form-group">
             <label>特攻:</label>
             <input
-              v-model.number="newMonster.stats.spAttack"
+              v-model.number="newMonster.stats.magicAttack"
               type="number"
               required
               min="1"
@@ -94,7 +94,7 @@
           <div class="form-group">
             <label>特防:</label>
             <input
-              v-model.number="newMonster.stats.spDefense"
+              v-model.number="newMonster.stats.magicDefense"
               type="number"
               required
               min="1"
@@ -112,22 +112,18 @@
           </div>
 
           <div class="form-group">
-            <label>特性:</label>
-            <input v-model="newMonster.ability" type="text" required />
-          </div>
-
-          <div class="form-group">
-            <label>画像URL:</label>
-            <input v-model="newMonster.imageUrl" type="text" />
-          </div>
-
-          <div class="form-group">
-            <label>覚える技（カンマ区切り）:</label>
-            <input
-              v-model="newMonster.learnableMoves"
-              type="text"
-              placeholder="例: たいあたり,ひっかく,かみつく"
-            />
+            <label>覚える技:</label>
+            <select
+              v-model="newMonster.selectedMoves"
+              multiple
+              size="10"
+              class="move-select"
+            >
+              <option v-for="move in moves" :key="move._id" :value="move._id">
+                {{ move.name }} ({{ move.type }})
+              </option>
+            </select>
+            <small>Ctrlキーを押しながらクリックで複数選択</small>
           </div>
 
           <button type="submit" class="btn-primary">モンスターを追加</button>
@@ -184,25 +180,24 @@
                 <div class="stat">HP: {{ monster.stats?.hp || 0 }}</div>
                 <div class="stat">攻撃: {{ monster.stats?.attack || 0 }}</div>
                 <div class="stat">防御: {{ monster.stats?.defense || 0 }}</div>
-                <div class="stat">特攻: {{ monster.stats?.spAttack || 0 }}</div>
                 <div class="stat">
-                  特防: {{ monster.stats?.spDefense || 0 }}
+                  特攻: {{ monster.stats?.magicAttack || 0 }}
+                </div>
+                <div class="stat">
+                  特防: {{ monster.stats?.magicDefense || 0 }}
                 </div>
                 <div class="stat">素早さ: {{ monster.stats?.speed || 0 }}</div>
               </div>
 
-              <div class="monster-ability">
-                <strong>特性:</strong> {{ monster.ability || "なし" }}
-              </div>
-
               <div
                 class="monster-moves"
-                v-if="
-                  monster.learnableMoves && monster.learnableMoves.length > 0
-                "
+                v-if="monster.moves && monster.moves.length > 0"
               >
                 <strong>覚える技:</strong>
-                {{ monster.learnableMoves.join(", ") }}
+                <span v-for="(move, idx) in monster.moves" :key="move._id">
+                  {{ move.name
+                  }}<span v-if="idx < monster.moves.length - 1">, </span>
+                </span>
               </div>
             </div>
           </div>
@@ -571,26 +566,7 @@ const { apiUrl, apiBaseUrl } = useApi();
 const activeTab = ref("monsters");
 
 // タイプ一覧
-const types = [
-  "ノーマル",
-  "ほのお",
-  "みず",
-  "でんき",
-  "くさ",
-  "こおり",
-  "かくとう",
-  "どく",
-  "じめん",
-  "ひこう",
-  "エスパー",
-  "むし",
-  "いわ",
-  "ゴースト",
-  "ドラゴン",
-  "あく",
-  "はがね",
-  "フェアリー",
-];
+const types = ["normal", "fire", "water", "grass", "light", "dark"];
 
 // メッセージ表示
 const message = ref("");
