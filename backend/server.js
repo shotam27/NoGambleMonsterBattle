@@ -27,12 +27,19 @@ app.use(express.urlencoded({ extended: true }));
 // Connect to MongoDB
 connectDB();
 
+// Load models (important for populate to work)
+require('./src/models/Move');
+require('./src/models/Monster');
+require('./src/models/Battle');
+
 // Routes
 const monsterRoutes = require('./src/routes/monster');
 const battleRoutes = require('./src/routes/battle');
+const moveRoutes = require('./src/routes/move');
 
 app.use('/api/monster', monsterRoutes);
 app.use('/api/battle', battleRoutes);
+app.use('/api/move', moveRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

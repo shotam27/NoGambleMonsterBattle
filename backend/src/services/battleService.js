@@ -124,6 +124,18 @@ function processSwitches(battle) {
       
       // Validate switch target
       if (newIndex >= 0 && newIndex < 3 && !side.data.party[newIndex].isFainted) {
+        // Clear substitute when switching out (substitute doesn't transfer)
+        const switchedOutMember = side.data.party[side.data.activeIndex];
+        if (switchedOutMember.hasSubstitute) {
+          switchedOutMember.hasSubstitute = false;
+          switchedOutMember.substituteHp = 0;
+        }
+        
+        // Clear injection when switching out (injection is tied to active pokemon)
+        if (switchedOutMember.hasInjection) {
+          switchedOutMember.hasInjection = false;
+        }
+        
         side.data.activeIndex = newIndex;
         
         // Reset stat modifiers when switching in
@@ -137,6 +149,14 @@ function processSwitches(battle) {
           switchedInMember.statModifiers.magicDefense = 0;
           switchedInMember.statModifiers.speed = 0;
         }
+        
+        // Clear pendingSwitchAfterAttack flag if this was a switch-after-attack
+        if (side.name === 'player') {
+          battle.pendingSwitchAfterAttack.player = false;
+        } else {
+          battle.pendingSwitchAfterAttack.opponent = false;
+        }
+        
         // TODO: Trigger landing abilities if implemented
       }
     }
@@ -162,8 +182,14 @@ function processDamage(battle, attacker, defender, move) {
   
   // Status moves don't deal damage but inflict status or stat changes
   if (move.category === 'status') {
-    // Apply status effect
-    if (move.statusEffect && defenderMember.status === 'none') {
+    // Substitute blocks status effects and stat debuffs (but not self-buffs)
+    if (defenderMember.hasSubstitute && move.statChange && move.statChange.target === 'opponent') {
+      // Substitute blocks opponent-targeted stat changes
+      return 0;
+    }
+    
+    // Apply status effect (substitute blocks this too)
+    if (move.statusEffect && defenderMember.status === 'none' && !defenderMember.hasSubstitute) {
       defenderMember.status = move.statusEffect;
       
       // Set sleep turns if applying sleep
@@ -201,11 +227,25 @@ function processDamage(battle, attacker, defender, move) {
     // Regular damage move
     damage = calculateDamage(attackerMonster, defenderMonster, move, attacker.party[attacker.activeIndex], defenderMember);
     
-    // Apply damage
-    defenderMember.currentHp = Math.max(0, defenderMember.currentHp - damage);
+    // Check if defender has substitute
+    if (defenderMember.hasSubstitute) {
+      // Moves with power < 70 are blocked completely
+      if (move.power < 70) {
+        // No damage to substitute or defender
+        damage = 0;
+      } else {
+        // Power >= 70: break substitute, no damage to defender
+        defenderMember.hasSubstitute = false;
+        defenderMember.substituteHp = 0;
+        damage = 0; // No damage to actual monster
+      }
+    } else {
+      // No substitute: apply damage normally
+      defenderMember.currentHp = Math.max(0, defenderMember.currentHp - damage);
+    }
     
-    // Apply status effect if move has statusEffect (even for damage moves)
-    if (move.statusEffect && defenderMember.status === 'none') {
+    // Apply status effect if move has statusEffect (substitute blocks this)
+    if (move.statusEffect && defenderMember.status === 'none' && !defenderMember.hasSubstitute) {
       defenderMember.status = move.statusEffect;
       
       // Set sleep turns if applying sleep
@@ -214,18 +254,23 @@ function processDamage(battle, attacker, defender, move) {
       }
     }
     
-    // Apply stat modifiers on damage moves
+    // Apply stat modifiers on damage moves (substitute blocks opponent-targeted debuffs)
     if (move.statChange) {
       const target = move.statChange.target === 'self' ? attacker.party[attacker.activeIndex] : defenderMember;
       const stat = move.statChange.stat;
       const stages = move.statChange.stages;
       
-      if (!target.statModifiers) {
-        target.statModifiers = { attack: 0, defense: 0, magicAttack: 0, magicDefense: 0, speed: 0 };
+      // Substitute blocks opponent-targeted stat changes
+      if (move.statChange.target === 'opponent' && defenderMember.hasSubstitute) {
+        // Blocked by substitute
+      } else {
+        if (!target.statModifiers) {
+          target.statModifiers = { attack: 0, defense: 0, magicAttack: 0, magicDefense: 0, speed: 0 };
+        }
+        
+        // Clamp to -2 to +2 range
+        target.statModifiers[stat] = Math.max(-2, Math.min(2, (target.statModifiers[stat] || 0) + stages));
       }
-      
-      // Clamp to -2 to +2 range
-      target.statModifiers[stat] = Math.max(-2, Math.min(2, (target.statModifiers[stat] || 0) + stages));
     }
   }
   
@@ -358,7 +403,8 @@ function processMoves(battle) {
     if (battle.player.selectedAction?.type === 'move') {
       const playerMonster = battle.player.party[battle.player.activeIndex].monsterId;
       console.log('Player monster:', playerMonster?.name, 'Moves:', playerMonster?.moves);
-      const move = playerMonster.moves.find(m => m.id === battle.player.selectedAction.moveId);
+      // Access custom 'id' field explicitly (not the default _id getter)
+      const move = playerMonster.moves.find(m => (m._doc?.id || m.get?.('id') || m.id) === battle.player.selectedAction.moveId);
       console.log('Player selected move:', battle.player.selectedAction.moveId, 'Found:', move);
       if (move) {
         console.log('Converting move to plain object...');
@@ -386,7 +432,8 @@ function processMoves(battle) {
     if (battle.opponent.selectedAction?.type === 'move') {
       const opponentMonster = battle.opponent.party[battle.opponent.activeIndex].monsterId;
       console.log('Opponent monster:', opponentMonster?.name, 'Moves:', opponentMonster?.moves);
-      const move = opponentMonster.moves.find(m => m.id === battle.opponent.selectedAction.moveId);
+      // Access custom 'id' field explicitly (not the default _id getter)
+      const move = opponentMonster.moves.find(m => (m._doc?.id || m.get?.('id') || m.id) === battle.opponent.selectedAction.moveId);
       console.log('Opponent selected move:', battle.opponent.selectedAction.moveId, 'Found:', move);
       if (move) {
         console.log('Converting opponent move to plain object...');
@@ -461,8 +508,63 @@ function processMoves(battle) {
         continue;
       }
       
+      // Handle substitute move
+      if (move.createsSubstitute) {
+        // Cannot create substitute if already has one
+        if (attackerMember.hasSubstitute) {
+          battleLog.push({
+            message: `${attackerMember.monsterId.name}にはすでに分身がいる！`
+          });
+          continue;
+        }
+        
+        // Need at least 1/4 HP to create substitute
+        const substituteCost = Math.floor(attackerMember.maxHp / 4);
+        if (attackerMember.currentHp <= substituteCost) {
+          battleLog.push({
+            message: `${attackerMember.monsterId.name}のHPが足りない！`
+          });
+          continue;
+        }
+        
+        // Create substitute
+        attackerMember.currentHp -= substituteCost;
+        attackerMember.hasSubstitute = true;
+        attackerMember.substituteHp = substituteCost;
+        
+        battleLog.push({
+          message: `${attackerMember.monsterId.name}は分身を作った！`,
+          attacker: name,
+          move: move.name
+        });
+        continue;
+      }
+      
+      // Handle injection move (like Leech Seed)
+      if (move.causesInjection) {
+        const defenderMember = opponent.party[opponent.activeIndex];
+        
+        // Cannot inject if already injected
+        if (defenderMember.hasInjection) {
+          battleLog.push({
+            message: `${defenderMember.monsterId.name}にはすでに注射されている！`
+          });
+          continue;
+        }
+        
+        // Apply injection
+        defenderMember.hasInjection = true;
+        
+        battleLog.push({
+          message: `${defenderMember.monsterId.name}は注射された！`,
+          attacker: name,
+          move: move.name
+        });
+        continue;
+      }
+      
       // Skip if defender already fainted (battle might have ended)
-      const defenderMember = opponent.party[opponent.activeIndex];
+      let defenderMember = opponent.party[opponent.activeIndex];
       if (defenderMember.isFainted || defenderMember.currentHp <= 0) {
         // Only skip if battle is already finished
         if (battle.status === 'finished') {
@@ -473,17 +575,24 @@ function processMoves(battle) {
       
       // TODO: Process pre-move abilities
       
+      // Store defender's substitute state before damage
+      const hadSubstitute = defenderMember.hasSubstitute;
+      
       // Process damage or status effect
       const damage = processDamage(battle, side, opponent, move);
       
+      // Check if substitute was broken
+      const substituteBroken = hadSubstitute && !defenderMember.hasSubstitute;
+      
       console.log(`After processDamage for ${move.name}:`, {
         attackerStatModifiers: side.party[side.activeIndex].statModifiers,
-        defenderStatModifiers: opponent.party[opponent.activeIndex].statModifiers
+        defenderStatModifiers: opponent.party[opponent.activeIndex].statModifiers,
+        hadSubstitute,
+        substituteBroken
       });
       
       // Add move to battle log
       if (move.category === 'status') {
-        const defenderMember = opponent.party[opponent.activeIndex];
         const statusName = move.statusEffect === 'poison' ? '毒' : 
                           move.statusEffect === 'paralysis' ? '麻痺' : '眠り';
         battleLog.push({
@@ -493,11 +602,31 @@ function processMoves(battle) {
           targetStatus: defenderMember.status
         });
       } else {
-        battleLog.push({
+        const logEntry = {
           attacker: name,
           move: move.name,
           damage
-        });
+        };
+        
+        // Add substitute info to log
+        if (hadSubstitute && move.power < 70) {
+          logEntry.substituteBlocked = true;
+        } else if (substituteBroken) {
+          logEntry.substituteBroken = true;
+        }
+        
+        battleLog.push(logEntry);
+        
+        // Add message for substitute interaction
+        if (hadSubstitute && move.power < 70) {
+          battleLog.push({
+            message: `${defenderMember.monsterId.name}の分身が攻撃を防いだ！`
+          });
+        } else if (substituteBroken) {
+          battleLog.push({
+            message: `${defenderMember.monsterId.name}の分身が壊れた！`
+          });
+        }
       }
       
       // Update lastMove
@@ -506,6 +635,30 @@ function processMoves(battle) {
         moveId: move.id,
         damage
       };
+      
+      // Process switch after attack if move has switchAfterAttack flag
+      if (move.switchAfterAttack && !attackerMember.isFainted && attackerMember.currentHp > 0) {
+        // Find available non-fainted party members to switch to
+        const availableMembers = side.party
+          .filter((member, index) => 
+            index !== side.activeIndex && 
+            !member.isFainted && 
+            member.currentHp > 0
+          );
+        
+        if (availableMembers.length > 0) {
+          // Mark that this side needs to switch after attack
+          if (name === 'player') {
+            battle.pendingSwitchAfterAttack.player = true;
+          } else {
+            battle.pendingSwitchAfterAttack.opponent = true;
+          }
+          
+          battleLog.push({
+            message: `${attackerMember.monsterId.name}は戻る準備をしている！`
+          });
+        }
+      }
       
       // TODO: Process move effects
     }
@@ -568,6 +721,41 @@ function processStatusEffects(battle) {
         });
       }
     }
+    
+    // Injection damage (drain HP and heal opponent)
+    if (playerMember.hasInjection) {
+      const injectionDamage = Math.max(1, Math.floor(playerMember.maxHp / 8));
+      playerMember.currentHp = Math.max(0, playerMember.currentHp - injectionDamage);
+      
+      // Heal the opponent
+      const opponentMember = battle.opponent.party[battle.opponent.activeIndex];
+      if (!opponentMember.isFainted) {
+        const healAmount = injectionDamage;
+        opponentMember.currentHp = Math.min(opponentMember.maxHp, opponentMember.currentHp + healAmount);
+        battleLog.push({
+          message: `${playerMember.monsterId.name}の体力が吸い取られた！`,
+          damage: injectionDamage
+        });
+        battleLog.push({
+          message: `${opponentMember.monsterId.name}は体力を回復した！`,
+          heal: healAmount
+        });
+      } else {
+        // Opponent fainted, so just take damage without healing
+        battleLog.push({
+          message: `${playerMember.monsterId.name}の体力が吸い取られた！`,
+          damage: injectionDamage
+        });
+      }
+      
+      // Check if fainted from injection
+      if (playerMember.currentHp <= 0) {
+        const faintResult = processFainting(battle);
+        if (faintResult.playerFainted) {
+          battleLog.push({ message: `${playerMember.monsterId.name}はひんしになった！` });
+        }
+      }
+    }
   }
   
   // Process opponent's active monster status
@@ -601,6 +789,41 @@ function processStatusEffects(battle) {
         });
       }
     }
+    
+    // Injection damage (drain HP and heal player)
+    if (opponentMember.hasInjection) {
+      const injectionDamage = Math.max(1, Math.floor(opponentMember.maxHp / 8));
+      opponentMember.currentHp = Math.max(0, opponentMember.currentHp - injectionDamage);
+      
+      // Heal the player
+      const playerMember = battle.player.party[battle.player.activeIndex];
+      if (!playerMember.isFainted) {
+        const healAmount = injectionDamage;
+        playerMember.currentHp = Math.min(playerMember.maxHp, playerMember.currentHp + healAmount);
+        battleLog.push({
+          message: `${opponentMember.monsterId.name}の体力が吸い取られた！`,
+          damage: injectionDamage
+        });
+        battleLog.push({
+          message: `${playerMember.monsterId.name}は体力を回復した！`,
+          heal: healAmount
+        });
+      } else {
+        // Player fainted, so just take damage without healing
+        battleLog.push({
+          message: `${opponentMember.monsterId.name}の体力が吸い取られた！`,
+          damage: injectionDamage
+        });
+      }
+      
+      // Check if fainted from injection
+      if (opponentMember.currentHp <= 0) {
+        const faintResult = processFainting(battle);
+        if (faintResult.opponentFainted) {
+          battleLog.push({ message: `${opponentMember.monsterId.name}はひんしになった！` });
+        }
+      }
+    }
   }
   
   return battleLog;
@@ -612,6 +835,9 @@ function processStatusEffects(battle) {
 async function executeTurn(battle) {
   try {
     const battleLog = [];
+    
+    // Add turn start log
+    battleLog.push(`===== ${battle.turn}ターン目開始 =====`);
     
     console.log('Executing turn - Battle state:', {
       playerAction: battle.player.selectedAction,
@@ -656,9 +882,25 @@ async function executeTurn(battle) {
       battleLog.push(...statusLog);
     }
     
+    // Check if any side has pending switch after attack
+    if (battle.status !== 'waiting_for_switch' && battle.status !== 'finished') {
+      if (battle.pendingSwitchAfterAttack.player || battle.pendingSwitchAfterAttack.opponent) {
+        battle.status = 'waiting_for_switch';
+        console.log('Battle requires switch after attack:', {
+          player: battle.pendingSwitchAfterAttack.player,
+          opponent: battle.pendingSwitchAfterAttack.opponent
+        });
+      }
+    }
+    
     // Clear selected actions for next turn
     battle.player.selectedAction = { type: null };
     battle.opponent.selectedAction = { type: null };
+    
+    // Add turn end log before incrementing turn
+    if (battle.status === 'active') {
+      battleLog.push(`===== ${battle.turn}ターン目終了 =====`);
+    }
     
     // Increment turn if battle continues and doesn't require switch
     if (battle.status === 'active') {
@@ -713,6 +955,29 @@ async function selectAction(battle, playerSide, action) {
  * AI selects an action for opponent
  */
 async function selectAIAction(battle) {
+  // Check if AI needs to switch after attack
+  if (battle.status === 'waiting_for_switch' && battle.pendingSwitchAfterAttack.opponent) {
+    // Find first non-fainted monster that isn't currently active
+    const availableIndices = battle.opponent.party
+      .map((member, idx) => ({ idx, member }))
+      .filter(({ idx, member }) => !member.isFainted && idx !== battle.opponent.activeIndex)
+      .map(({ idx }) => idx);
+    
+    if (availableIndices.length > 0) {
+      // Randomly select one of the available monsters
+      const switchToIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+      
+      battle.opponent.selectedAction = {
+        type: 'switch',
+        switchToIndex
+      };
+      
+      await battle.save();
+      return battle;
+    }
+  }
+  
+  // Normal move selection
   const opponentMonster = battle.opponent.party[battle.opponent.activeIndex].monsterId;
   
   // Simple AI: randomly select a move

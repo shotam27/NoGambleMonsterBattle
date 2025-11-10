@@ -76,8 +76,8 @@ exports.startBattle = async (req, res) => {
 
     // Populate for response
     await battle.populate([
-      { path: 'player.party.monsterId' },
-      { path: 'opponent.party.monsterId' }
+      { path: 'player.party.monsterId', populate: { path: 'moves' } },
+      { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
     ]);
 
     const battleObj = battle.toObject();
@@ -102,8 +102,8 @@ exports.selectAction = async (req, res) => {
     const { actionType, moveId, switchToIndex } = req.body;
 
     const battle = await Battle.findById(battleId).populate([
-      { path: 'player.party.monsterId' },
-      { path: 'opponent.party.monsterId' }
+      { path: 'player.party.monsterId', populate: { path: 'moves' } },
+      { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
     ]);
     
     if (!battle) {
@@ -143,12 +143,37 @@ exports.selectAction = async (req, res) => {
       
       // Re-populate after save
       await turnResult.battle.populate([
-        { path: 'player.party.monsterId' },
-        { path: 'opponent.party.monsterId' }
+        { path: 'player.party.monsterId', populate: { path: 'moves' } },
+        { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
       ]);
 
       const battleObj = turnResult.battle.toObject();
       console.log('After turn - Player statModifiers:', battleObj.player.party[0].statModifiers);
+
+      // If opponent needs to switch after attack, auto-select for AI
+      if (turnResult.requiresSwitch?.opponent && turnResult.battle.status === 'waiting_for_switch') {
+        await battleService.selectAIAction(turnResult.battle);
+        console.log('AI auto-selected switch after attack move');
+        
+        // Check if both have now selected switch actions
+        if (turnResult.battle.player.selectedAction?.type && turnResult.battle.opponent.selectedAction?.type) {
+          // Execute the switch turn
+          const switchTurnResult = await battleService.executeTurn(turnResult.battle);
+          
+          // Re-populate
+          await switchTurnResult.battle.populate([
+            { path: 'player.party.monsterId', populate: { path: 'moves' } },
+            { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+          ]);
+          
+          return res.status(200).json({
+            battle: switchTurnResult.battle.toObject(),
+            battleLog: [...turnResult.battleLog, ...switchTurnResult.battleLog],
+            requiresSwitch: switchTurnResult.requiresSwitch,
+            message: 'Turn and switch executed'
+          });
+        }
+      }
 
       return res.status(200).json({
         battle: battleObj,
@@ -173,8 +198,8 @@ exports.selectAction = async (req, res) => {
 exports.getBattleStatus = async (req, res) => {
   try {
     const battle = await Battle.findById(req.params.battleId).populate([
-      { path: 'player.party.monsterId' },
-      { path: 'opponent.party.monsterId' }
+      { path: 'player.party.monsterId', populate: { path: 'moves' } },
+      { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
     ]);
     
     if (!battle) {
@@ -237,8 +262,8 @@ exports.switchMonster = async (req, res) => {
 
     // Populate for response
     await battle.populate([
-      { path: 'player.party.monsterId' },
-      { path: 'opponent.party.monsterId' }
+      { path: 'player.party.monsterId', populate: { path: 'moves' } },
+      { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
     ]);
 
     res.status(200).json({

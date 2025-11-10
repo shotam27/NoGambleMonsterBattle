@@ -36,6 +36,19 @@
         "power": 85,
         "priority": 2,
         "category": "physical"
+      },
+      {
+        "id": "swords_dance",
+        "name": "剣の舞",
+        "type": "normal",
+        "power": 0,
+        "priority": 2,
+        "category": "status",
+        "statChange": {
+          "target": "self",
+          "stat": "attack",
+          "stages": 2
+        }
       }
     ]
   },
@@ -76,6 +89,19 @@
         "power": 85,
         "priority": 2,
         "category": "magical"
+      },
+      {
+        "id": "dragon_dance",
+        "name": "竜の舞",
+        "type": "water",
+        "power": 0,
+        "priority": 2,
+        "category": "status",
+        "statChange": {
+          "target": "self",
+          "stat": "speed",
+          "stages": 1
+        }
       }
     ]
   },
@@ -116,6 +142,19 @@
         "power": 85,
         "priority": 2,
         "category": "magical"
+      },
+      {
+        "id": "intimidate",
+        "name": "威嚇",
+        "type": "normal",
+        "power": 0,
+        "priority": 2,
+        "category": "status",
+        "statChange": {
+          "target": "opponent",
+          "stat": "attack",
+          "stages": -1
+        }
       }
     ]
   },
@@ -270,6 +309,15 @@
         "power": 120,
         "priority": 2,
         "category": "magical"
+      },
+      {
+        "id": "stamp",
+        "name": "のしかかり",
+        "type": "normal",
+        "power": 50,
+        "priority": 2,
+        "category": "physical",
+        "statusEffect": "paralysis"
       },
       {
         "id": "grass_knot",

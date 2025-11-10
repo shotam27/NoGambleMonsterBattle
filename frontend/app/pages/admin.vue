@@ -1,17 +1,17 @@
 <template>
   <div class="admin-container">
     <h1>管理画面</h1>
-    
+
     <!-- タブ切り替え -->
     <div class="tabs">
-      <button 
-        :class="{ active: activeTab === 'monsters' }" 
+      <button
+        :class="{ active: activeTab === 'monsters' }"
         @click="activeTab = 'monsters'"
       >
         モンスター管理
       </button>
-      <button 
-        :class="{ active: activeTab === 'moves' }" 
+      <button
+        :class="{ active: activeTab === 'moves' }"
         @click="activeTab = 'moves'"
       >
         技管理
@@ -21,7 +21,7 @@
     <!-- モンスター管理タブ -->
     <div v-if="activeTab === 'monsters'" class="tab-content">
       <h2>モンスター管理</h2>
-      
+
       <!-- モンスター追加フォーム -->
       <div class="form-section">
         <h3>新規モンスター追加</h3>
@@ -30,68 +30,106 @@
             <label>名前:</label>
             <input v-model="newMonster.name" type="text" required />
           </div>
-          
+
           <div class="form-group">
             <label>タイプ1:</label>
             <select v-model="newMonster.type1" required>
               <option value="">選択してください</option>
-              <option v-for="type in types" :key="type" :value="type">{{ type }}</option>
+              <option v-for="type in types" :key="type" :value="type">
+                {{ type }}
+              </option>
             </select>
           </div>
-          
+
           <div class="form-group">
             <label>タイプ2:</label>
             <select v-model="newMonster.type2">
               <option value="">なし</option>
-              <option v-for="type in types" :key="type" :value="type">{{ type }}</option>
+              <option v-for="type in types" :key="type" :value="type">
+                {{ type }}
+              </option>
             </select>
           </div>
-          
+
           <div class="form-group">
             <label>HP:</label>
-            <input v-model.number="newMonster.stats.hp" type="number" required min="1" />
+            <input
+              v-model.number="newMonster.stats.hp"
+              type="number"
+              required
+              min="1"
+            />
           </div>
-          
+
           <div class="form-group">
             <label>攻撃:</label>
-            <input v-model.number="newMonster.stats.attack" type="number" required min="1" />
+            <input
+              v-model.number="newMonster.stats.attack"
+              type="number"
+              required
+              min="1"
+            />
           </div>
-          
+
           <div class="form-group">
             <label>防御:</label>
-            <input v-model.number="newMonster.stats.defense" type="number" required min="1" />
+            <input
+              v-model.number="newMonster.stats.defense"
+              type="number"
+              required
+              min="1"
+            />
           </div>
-          
+
           <div class="form-group">
             <label>特攻:</label>
-            <input v-model.number="newMonster.stats.spAttack" type="number" required min="1" />
+            <input
+              v-model.number="newMonster.stats.spAttack"
+              type="number"
+              required
+              min="1"
+            />
           </div>
-          
+
           <div class="form-group">
             <label>特防:</label>
-            <input v-model.number="newMonster.stats.spDefense" type="number" required min="1" />
+            <input
+              v-model.number="newMonster.stats.spDefense"
+              type="number"
+              required
+              min="1"
+            />
           </div>
-          
+
           <div class="form-group">
             <label>素早さ:</label>
-            <input v-model.number="newMonster.stats.speed" type="number" required min="1" />
+            <input
+              v-model.number="newMonster.stats.speed"
+              type="number"
+              required
+              min="1"
+            />
           </div>
-          
+
           <div class="form-group">
             <label>特性:</label>
             <input v-model="newMonster.ability" type="text" required />
           </div>
-          
+
           <div class="form-group">
             <label>画像URL:</label>
             <input v-model="newMonster.imageUrl" type="text" />
           </div>
-          
+
           <div class="form-group">
             <label>覚える技（カンマ区切り）:</label>
-            <input v-model="newMonster.learnableMoves" type="text" placeholder="例: たいあたり,ひっかく,かみつく" />
+            <input
+              v-model="newMonster.learnableMoves"
+              type="text"
+              placeholder="例: たいあたり,ひっかく,かみつく"
+            />
           </div>
-          
+
           <button type="submit" class="btn-primary">モンスターを追加</button>
         </form>
       </div>
@@ -100,56 +138,71 @@
       <div class="list-section">
         <h3>モンスター一覧</h3>
         <div class="search-box">
-          <input 
-            v-model="monsterSearchQuery" 
-            type="text" 
+          <input
+            v-model="monsterSearchQuery"
+            type="text"
             placeholder="モンスター名で検索..."
           />
         </div>
-        
+
         <div class="monster-list">
-          <div 
-            v-for="monster in filteredMonsters" 
-            :key="monster._id" 
+          <div
+            v-for="monster in filteredMonsters"
+            :key="monster._id"
             class="monster-card"
           >
             <div class="monster-header">
               <h4>{{ monster.name }}</h4>
               <div class="monster-actions">
-                <button @click="editMonster(monster)" class="btn-edit">編集</button>
-                <button @click="deleteMonster(monster._id)" class="btn-delete">削除</button>
+                <button @click="editMonster(monster)" class="btn-edit">
+                  編集
+                </button>
+                <button @click="deleteMonster(monster._id)" class="btn-delete">
+                  削除
+                </button>
               </div>
             </div>
-            
+
             <div class="monster-info">
               <div class="monster-types">
-                <span class="type-badge" :class="`type-${monster.type1?.toLowerCase()}`">
+                <span
+                  class="type-badge"
+                  :class="`type-${monster.type1?.toLowerCase()}`"
+                >
                   {{ monster.type1 }}
                 </span>
-                <span 
-                  v-if="monster.type2" 
-                  class="type-badge" 
+                <span
+                  v-if="monster.type2"
+                  class="type-badge"
                   :class="`type-${monster.type2?.toLowerCase()}`"
                 >
                   {{ monster.type2 }}
                 </span>
               </div>
-              
+
               <div class="monster-stats">
                 <div class="stat">HP: {{ monster.stats?.hp || 0 }}</div>
                 <div class="stat">攻撃: {{ monster.stats?.attack || 0 }}</div>
                 <div class="stat">防御: {{ monster.stats?.defense || 0 }}</div>
                 <div class="stat">特攻: {{ monster.stats?.spAttack || 0 }}</div>
-                <div class="stat">特防: {{ monster.stats?.spDefense || 0 }}</div>
+                <div class="stat">
+                  特防: {{ monster.stats?.spDefense || 0 }}
+                </div>
                 <div class="stat">素早さ: {{ monster.stats?.speed || 0 }}</div>
               </div>
-              
+
               <div class="monster-ability">
-                <strong>特性:</strong> {{ monster.ability || 'なし' }}
+                <strong>特性:</strong> {{ monster.ability || "なし" }}
               </div>
-              
-              <div class="monster-moves" v-if="monster.learnableMoves && monster.learnableMoves.length > 0">
-                <strong>覚える技:</strong> {{ monster.learnableMoves.join(', ') }}
+
+              <div
+                class="monster-moves"
+                v-if="
+                  monster.learnableMoves && monster.learnableMoves.length > 0
+                "
+              >
+                <strong>覚える技:</strong>
+                {{ monster.learnableMoves.join(", ") }}
               </div>
             </div>
           </div>
@@ -165,75 +218,111 @@
               <label>名前:</label>
               <input v-model="editingMonster.name" type="text" required />
             </div>
-            
+
             <div class="form-group">
               <label>タイプ1:</label>
               <select v-model="editingMonster.type1" required>
                 <option value="">選択してください</option>
-                <option v-for="type in types" :key="type" :value="type">{{ type }}</option>
+                <option v-for="type in types" :key="type" :value="type">
+                  {{ type }}
+                </option>
               </select>
             </div>
-            
+
             <div class="form-group">
               <label>タイプ2:</label>
               <select v-model="editingMonster.type2">
                 <option value="">なし</option>
-                <option v-for="type in types" :key="type" :value="type">{{ type }}</option>
+                <option v-for="type in types" :key="type" :value="type">
+                  {{ type }}
+                </option>
               </select>
             </div>
-            
+
             <div class="form-group">
               <label>HP:</label>
-              <input v-model.number="editingMonster.stats.hp" type="number" required min="1" />
+              <input
+                v-model.number="editingMonster.stats.hp"
+                type="number"
+                required
+                min="1"
+              />
             </div>
-            
+
             <div class="form-group">
               <label>攻撃:</label>
-              <input v-model.number="editingMonster.stats.attack" type="number" required min="1" />
+              <input
+                v-model.number="editingMonster.stats.attack"
+                type="number"
+                required
+                min="1"
+              />
             </div>
-            
+
             <div class="form-group">
               <label>防御:</label>
-              <input v-model.number="editingMonster.stats.defense" type="number" required min="1" />
+              <input
+                v-model.number="editingMonster.stats.defense"
+                type="number"
+                required
+                min="1"
+              />
             </div>
-            
+
             <div class="form-group">
               <label>特攻:</label>
-              <input v-model.number="editingMonster.stats.spAttack" type="number" required min="1" />
+              <input
+                v-model.number="editingMonster.stats.spAttack"
+                type="number"
+                required
+                min="1"
+              />
             </div>
-            
+
             <div class="form-group">
               <label>特防:</label>
-              <input v-model.number="editingMonster.stats.spDefense" type="number" required min="1" />
+              <input
+                v-model.number="editingMonster.stats.spDefense"
+                type="number"
+                required
+                min="1"
+              />
             </div>
-            
+
             <div class="form-group">
               <label>素早さ:</label>
-              <input v-model.number="editingMonster.stats.speed" type="number" required min="1" />
+              <input
+                v-model.number="editingMonster.stats.speed"
+                type="number"
+                required
+                min="1"
+              />
             </div>
-            
+
             <div class="form-group">
               <label>特性:</label>
               <input v-model="editingMonster.ability" type="text" required />
             </div>
-            
+
             <div class="form-group">
               <label>画像URL:</label>
               <input v-model="editingMonster.imageUrl" type="text" />
             </div>
-            
+
             <div class="form-group">
               <label>覚える技（カンマ区切り）:</label>
-              <input 
-                v-model="editingMonsterMoves" 
-                type="text" 
-                placeholder="例: たいあたり,ひっかく,かみつく" 
+              <input
+                v-model="editingMonsterMoves"
+                type="text"
+                placeholder="例: たいあたり,ひっかく,かみつく"
               />
             </div>
-            
+
             <div class="modal-actions">
               <button type="submit" class="btn-primary">更新</button>
-              <button type="button" @click="cancelEdit" class="btn-secondary">キャンセル</button>
+              <button type="button" @click="cancelEdit" class="btn-secondary">
+                キャンセル
+              </button>
             </div>
           </form>
         </div>
@@ -243,7 +332,7 @@
     <!-- 技管理タブ -->
     <div v-if="activeTab === 'moves'" class="tab-content">
       <h2>技管理</h2>
-      
+
       <!-- 技追加フォーム -->
       <div class="form-section">
         <h3>新規技追加</h3>
@@ -252,15 +341,17 @@
             <label>技名:</label>
             <input v-model="newMove.name" type="text" required />
           </div>
-          
+
           <div class="form-group">
             <label>タイプ:</label>
             <select v-model="newMove.type" required>
               <option value="">選択してください</option>
-              <option v-for="type in types" :key="type" :value="type">{{ type }}</option>
+              <option v-for="type in types" :key="type" :value="type">
+                {{ type }}
+              </option>
             </select>
           </div>
-          
+
           <div class="form-group">
             <label>分類:</label>
             <select v-model="newMove.category" required>
@@ -270,44 +361,50 @@
               <option value="変化">変化</option>
             </select>
           </div>
-          
+
           <div class="form-group">
             <label>威力:</label>
             <input v-model.number="newMove.power" type="number" min="0" />
             <small>変化技の場合は0</small>
           </div>
-          
+
           <div class="form-group">
             <label>命中率:</label>
-            <input v-model.number="newMove.accuracy" type="number" required min="0" max="100" />
+            <input
+              v-model.number="newMove.accuracy"
+              type="number"
+              required
+              min="0"
+              max="100"
+            />
           </div>
-          
+
           <div class="form-group">
             <label>PP:</label>
             <input v-model.number="newMove.pp" type="number" required min="1" />
           </div>
-          
+
           <div class="form-group">
             <label>優先度:</label>
             <input v-model.number="newMove.priority" type="number" value="0" />
             <small>通常は0、先制技は正の値、後攻技は負の値</small>
           </div>
-          
+
           <div class="form-group">
             <label>説明:</label>
             <textarea v-model="newMove.description" rows="3"></textarea>
           </div>
-          
+
           <div class="form-group">
             <label>追加効果:</label>
-            <textarea 
-              v-model="newMove.effectsJson" 
-              rows="5" 
+            <textarea
+              v-model="newMove.effectsJson"
+              rows="5"
               placeholder='{"type": "damage", "damage": 50}'
             ></textarea>
             <small>JSON形式で入力</small>
           </div>
-          
+
           <button type="submit" class="btn-primary">技を追加</button>
         </form>
       </div>
@@ -316,48 +413,52 @@
       <div class="list-section">
         <h3>技一覧</h3>
         <div class="search-box">
-          <input 
-            v-model="moveSearchQuery" 
-            type="text" 
+          <input
+            v-model="moveSearchQuery"
+            type="text"
             placeholder="技名で検索..."
           />
         </div>
-        
+
         <div class="move-list">
-          <div 
-            v-for="move in filteredMoves" 
-            :key="move._id" 
-            class="move-card"
-          >
+          <div v-for="move in filteredMoves" :key="move._id" class="move-card">
             <div class="move-header">
               <h4>{{ move.name }}</h4>
               <div class="move-actions">
                 <button @click="editMove(move)" class="btn-edit">編集</button>
-                <button @click="deleteMove(move._id)" class="btn-delete">削除</button>
+                <button @click="deleteMove(move._id)" class="btn-delete">
+                  削除
+                </button>
               </div>
             </div>
-            
+
             <div class="move-info">
               <div class="move-basic">
-                <span class="type-badge" :class="`type-${move.type?.toLowerCase()}`">
+                <span
+                  class="type-badge"
+                  :class="`type-${move.type?.toLowerCase()}`"
+                >
                   {{ move.type }}
                 </span>
-                <span class="category-badge" :class="`category-${move.category}`">
+                <span
+                  class="category-badge"
+                  :class="`category-${move.category}`"
+                >
                   {{ move.category }}
                 </span>
               </div>
-              
+
               <div class="move-stats">
-                <div class="stat">威力: {{ move.power || '-' }}</div>
+                <div class="stat">威力: {{ move.power || "-" }}</div>
                 <div class="stat">命中: {{ move.accuracy }}%</div>
                 <div class="stat">PP: {{ move.pp }}</div>
                 <div class="stat">優先度: {{ move.priority || 0 }}</div>
               </div>
-              
+
               <div class="move-description" v-if="move.description">
                 {{ move.description }}
               </div>
-              
+
               <div class="move-effects" v-if="move.effects">
                 <strong>追加効果:</strong>
                 <pre>{{ JSON.stringify(move.effects, null, 2) }}</pre>
@@ -376,15 +477,17 @@
               <label>技名:</label>
               <input v-model="editingMove.name" type="text" required />
             </div>
-            
+
             <div class="form-group">
               <label>タイプ:</label>
               <select v-model="editingMove.type" required>
                 <option value="">選択してください</option>
-                <option v-for="type in types" :key="type" :value="type">{{ type }}</option>
+                <option v-for="type in types" :key="type" :value="type">
+                  {{ type }}
+                </option>
               </select>
             </div>
-            
+
             <div class="form-group">
               <label>分類:</label>
               <select v-model="editingMove.category" required>
@@ -394,44 +497,58 @@
                 <option value="変化">変化</option>
               </select>
             </div>
-            
+
             <div class="form-group">
               <label>威力:</label>
               <input v-model.number="editingMove.power" type="number" min="0" />
             </div>
-            
+
             <div class="form-group">
               <label>命中率:</label>
-              <input v-model.number="editingMove.accuracy" type="number" required min="0" max="100" />
+              <input
+                v-model.number="editingMove.accuracy"
+                type="number"
+                required
+                min="0"
+                max="100"
+              />
             </div>
-            
+
             <div class="form-group">
               <label>PP:</label>
-              <input v-model.number="editingMove.pp" type="number" required min="1" />
+              <input
+                v-model.number="editingMove.pp"
+                type="number"
+                required
+                min="1"
+              />
             </div>
-            
+
             <div class="form-group">
               <label>優先度:</label>
               <input v-model.number="editingMove.priority" type="number" />
             </div>
-            
+
             <div class="form-group">
               <label>説明:</label>
               <textarea v-model="editingMove.description" rows="3"></textarea>
             </div>
-            
+
             <div class="form-group">
               <label>追加効果:</label>
-              <textarea 
-                v-model="editingMoveEffects" 
-                rows="5"
-              ></textarea>
+              <textarea v-model="editingMoveEffects" rows="5"></textarea>
               <small>JSON形式で入力</small>
             </div>
-            
+
             <div class="modal-actions">
               <button type="submit" class="btn-primary">更新</button>
-              <button type="button" @click="cancelMoveEdit" class="btn-secondary">キャンセル</button>
+              <button
+                type="button"
+                @click="cancelMoveEdit"
+                class="btn-secondary"
+              >
+                キャンセル
+              </button>
             </div>
           </form>
         </div>
@@ -446,336 +563,367 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from "vue";
 
-const { apiUrl, apiBaseUrl } = useApi()
+const { apiUrl, apiBaseUrl } = useApi();
 
 // タブ管理
-const activeTab = ref('monsters')
+const activeTab = ref("monsters");
 
 // タイプ一覧
 const types = [
-  'ノーマル', 'ほのお', 'みず', 'でんき', 'くさ', 'こおり',
-  'かくとう', 'どく', 'じめん', 'ひこう', 'エスパー', 'むし',
-  'いわ', 'ゴースト', 'ドラゴン', 'あく', 'はがね', 'フェアリー'
-]
+  "ノーマル",
+  "ほのお",
+  "みず",
+  "でんき",
+  "くさ",
+  "こおり",
+  "かくとう",
+  "どく",
+  "じめん",
+  "ひこう",
+  "エスパー",
+  "むし",
+  "いわ",
+  "ゴースト",
+  "ドラゴン",
+  "あく",
+  "はがね",
+  "フェアリー",
+];
 
 // メッセージ表示
-const message = ref('')
-const messageType = ref('success')
+const message = ref("");
+const messageType = ref("success");
 
-const showMessage = (msg, type = 'success') => {
-  message.value = msg
-  messageType.value = type
+const showMessage = (msg, type = "success") => {
+  message.value = msg;
+  messageType.value = type;
   setTimeout(() => {
-    message.value = ''
-  }, 3000)
-}
+    message.value = "";
+  }, 3000);
+};
 
 // ===== モンスター管理 =====
-const monsters = ref([])
-const monsterSearchQuery = ref('')
+const monsters = ref([]);
+const monsterSearchQuery = ref("");
 const newMonster = ref({
-  name: '',
-  type1: '',
-  type2: '',
+  name: "",
+  type1: "",
+  type2: "",
   stats: {
     hp: 0,
     attack: 0,
     defense: 0,
     spAttack: 0,
     spDefense: 0,
-    speed: 0
+    speed: 0,
   },
-  ability: '',
-  imageUrl: '',
-  learnableMoves: ''
-})
-const editingMonster = ref(null)
-const editingMonsterMoves = ref('')
+  ability: "",
+  imageUrl: "",
+  learnableMoves: "",
+});
+const editingMonster = ref(null);
+const editingMonsterMoves = ref("");
 
 const filteredMonsters = computed(() => {
-  if (!monsterSearchQuery.value) return monsters.value
-  const query = monsterSearchQuery.value.toLowerCase()
-  return monsters.value.filter(m => m.name?.toLowerCase().includes(query))
-})
+  if (!monsterSearchQuery.value) return monsters.value;
+  const query = monsterSearchQuery.value.toLowerCase();
+  return monsters.value.filter((m) => m.name?.toLowerCase().includes(query));
+});
 
 const fetchMonsters = async () => {
   try {
-    const response = await fetch(`${apiBaseUrl}/monster`)
+    const response = await fetch(`${apiBaseUrl}/monster`);
     if (response.ok) {
-      monsters.value = await response.json()
+      monsters.value = await response.json();
     } else {
-      showMessage('モンスター一覧の取得に失敗しました', 'error')
+      showMessage("モンスター一覧の取得に失敗しました", "error");
     }
   } catch (error) {
-    console.error('Error fetching monsters:', error)
-    showMessage('モンスター一覧の取得に失敗しました', 'error')
+    console.error("Error fetching monsters:", error);
+    showMessage("モンスター一覧の取得に失敗しました", "error");
   }
-}
+};
 
 const addMonster = async () => {
   try {
     const monsterData = {
       ...newMonster.value,
       learnableMoves: newMonster.value.learnableMoves
-        ? newMonster.value.learnableMoves.split(',').map(m => m.trim()).filter(m => m)
-        : []
-    }
-    
+        ? newMonster.value.learnableMoves
+            .split(",")
+            .map((m) => m.trim())
+            .filter((m) => m)
+        : [],
+    };
+
     const response = await fetch(`${apiBaseUrl}/monster`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(monsterData)
-    })
-    
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(monsterData),
+    });
+
     if (response.ok) {
-      showMessage('モンスターを追加しました', 'success')
-      await fetchMonsters()
-      resetMonsterForm()
+      showMessage("モンスターを追加しました", "success");
+      await fetchMonsters();
+      resetMonsterForm();
     } else {
-      const error = await response.json()
-      showMessage(`追加に失敗しました: ${error.message}`, 'error')
+      const error = await response.json();
+      showMessage(`追加に失敗しました: ${error.message}`, "error");
     }
   } catch (error) {
-    console.error('Error adding monster:', error)
-    showMessage('モンスターの追加に失敗しました', 'error')
+    console.error("Error adding monster:", error);
+    showMessage("モンスターの追加に失敗しました", "error");
   }
-}
+};
 
 const editMonster = (monster) => {
-  editingMonster.value = JSON.parse(JSON.stringify(monster))
-  editingMonsterMoves.value = monster.learnableMoves ? monster.learnableMoves.join(', ') : ''
-}
+  editingMonster.value = JSON.parse(JSON.stringify(monster));
+  editingMonsterMoves.value = monster.learnableMoves
+    ? monster.learnableMoves.join(", ")
+    : "";
+};
 
 const updateMonster = async () => {
   try {
     const monsterData = {
       ...editingMonster.value,
       learnableMoves: editingMonsterMoves.value
-        ? editingMonsterMoves.value.split(',').map(m => m.trim()).filter(m => m)
-        : []
-    }
-    
-    const response = await fetch(`${apiBaseUrl}/monster/${editingMonster.value._id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(monsterData)
-    })
-    
+        ? editingMonsterMoves.value
+            .split(",")
+            .map((m) => m.trim())
+            .filter((m) => m)
+        : [],
+    };
+
+    const response = await fetch(
+      `${apiBaseUrl}/monster/${editingMonster.value._id}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(monsterData),
+      }
+    );
+
     if (response.ok) {
-      showMessage('モンスターを更新しました', 'success')
-      await fetchMonsters()
-      cancelEdit()
+      showMessage("モンスターを更新しました", "success");
+      await fetchMonsters();
+      cancelEdit();
     } else {
-      const error = await response.json()
-      showMessage(`更新に失敗しました: ${error.message}`, 'error')
+      const error = await response.json();
+      showMessage(`更新に失敗しました: ${error.message}`, "error");
     }
   } catch (error) {
-    console.error('Error updating monster:', error)
-    showMessage('モンスターの更新に失敗しました', 'error')
+    console.error("Error updating monster:", error);
+    showMessage("モンスターの更新に失敗しました", "error");
   }
-}
+};
 
 const deleteMonster = async (id) => {
-  if (!confirm('本当にこのモンスターを削除しますか？')) return
-  
+  if (!confirm("本当にこのモンスターを削除しますか？")) return;
+
   try {
     const response = await fetch(`${apiBaseUrl}/monster/${id}`, {
-      method: 'DELETE'
-    })
-    
+      method: "DELETE",
+    });
+
     if (response.ok) {
-      showMessage('モンスターを削除しました', 'success')
-      await fetchMonsters()
+      showMessage("モンスターを削除しました", "success");
+      await fetchMonsters();
     } else {
-      showMessage('削除に失敗しました', 'error')
+      showMessage("削除に失敗しました", "error");
     }
   } catch (error) {
-    console.error('Error deleting monster:', error)
-    showMessage('モンスターの削除に失敗しました', 'error')
+    console.error("Error deleting monster:", error);
+    showMessage("モンスターの削除に失敗しました", "error");
   }
-}
+};
 
 const cancelEdit = () => {
-  editingMonster.value = null
-  editingMonsterMoves.value = ''
-}
+  editingMonster.value = null;
+  editingMonsterMoves.value = "";
+};
 
 const resetMonsterForm = () => {
   newMonster.value = {
-    name: '',
-    type1: '',
-    type2: '',
+    name: "",
+    type1: "",
+    type2: "",
     stats: {
       hp: 0,
       attack: 0,
       defense: 0,
       spAttack: 0,
       spDefense: 0,
-      speed: 0
+      speed: 0,
     },
-    ability: '',
-    imageUrl: '',
-    learnableMoves: ''
-  }
-}
+    ability: "",
+    imageUrl: "",
+    learnableMoves: "",
+  };
+};
 
 // ===== 技管理 =====
-const moves = ref([])
-const moveSearchQuery = ref('')
+const moves = ref([]);
+const moveSearchQuery = ref("");
 const newMove = ref({
-  name: '',
-  type: '',
-  category: '',
+  name: "",
+  type: "",
+  category: "",
   power: 0,
   accuracy: 100,
   pp: 10,
   priority: 0,
-  description: '',
-  effectsJson: ''
-})
-const editingMove = ref(null)
-const editingMoveEffects = ref('')
+  description: "",
+  effectsJson: "",
+});
+const editingMove = ref(null);
+const editingMoveEffects = ref("");
 
 const filteredMoves = computed(() => {
-  if (!moveSearchQuery.value) return moves.value
-  const query = moveSearchQuery.value.toLowerCase()
-  return moves.value.filter(m => m.name?.toLowerCase().includes(query))
-})
+  if (!moveSearchQuery.value) return moves.value;
+  const query = moveSearchQuery.value.toLowerCase();
+  return moves.value.filter((m) => m.name?.toLowerCase().includes(query));
+});
 
 const fetchMoves = async () => {
   try {
-    const response = await fetch(`${apiBaseUrl}/move`)
+    const response = await fetch(`${apiBaseUrl}/move`);
     if (response.ok) {
-      moves.value = await response.json()
+      moves.value = await response.json();
     } else {
-      showMessage('技一覧の取得に失敗しました', 'error')
+      showMessage("技一覧の取得に失敗しました", "error");
     }
   } catch (error) {
-    console.error('Error fetching moves:', error)
-    showMessage('技一覧の取得に失敗しました', 'error')
+    console.error("Error fetching moves:", error);
+    showMessage("技一覧の取得に失敗しました", "error");
   }
-}
+};
 
 const addMove = async () => {
   try {
-    const moveData = { ...newMove.value }
-    
+    const moveData = { ...newMove.value };
+
     // effectsJsonをパース
     if (moveData.effectsJson) {
       try {
-        moveData.effects = JSON.parse(moveData.effectsJson)
+        moveData.effects = JSON.parse(moveData.effectsJson);
       } catch (e) {
-        showMessage('追加効果のJSON形式が不正です', 'error')
-        return
+        showMessage("追加効果のJSON形式が不正です", "error");
+        return;
       }
     }
-    delete moveData.effectsJson
-    
+    delete moveData.effectsJson;
+
     const response = await fetch(`${apiBaseUrl}/move`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(moveData)
-    })
-    
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(moveData),
+    });
+
     if (response.ok) {
-      showMessage('技を追加しました', 'success')
-      await fetchMoves()
-      resetMoveForm()
+      showMessage("技を追加しました", "success");
+      await fetchMoves();
+      resetMoveForm();
     } else {
-      const error = await response.json()
-      showMessage(`追加に失敗しました: ${error.message}`, 'error')
+      const error = await response.json();
+      showMessage(`追加に失敗しました: ${error.message}`, "error");
     }
   } catch (error) {
-    console.error('Error adding move:', error)
-    showMessage('技の追加に失敗しました', 'error')
+    console.error("Error adding move:", error);
+    showMessage("技の追加に失敗しました", "error");
   }
-}
+};
 
 const editMove = (move) => {
-  editingMove.value = JSON.parse(JSON.stringify(move))
-  editingMoveEffects.value = move.effects ? JSON.stringify(move.effects, null, 2) : ''
-}
+  editingMove.value = JSON.parse(JSON.stringify(move));
+  editingMoveEffects.value = move.effects
+    ? JSON.stringify(move.effects, null, 2)
+    : "";
+};
 
 const updateMove = async () => {
   try {
-    const moveData = { ...editingMove.value }
-    
+    const moveData = { ...editingMove.value };
+
     // effectsをパース
     if (editingMoveEffects.value) {
       try {
-        moveData.effects = JSON.parse(editingMoveEffects.value)
+        moveData.effects = JSON.parse(editingMoveEffects.value);
       } catch (e) {
-        showMessage('追加効果のJSON形式が不正です', 'error')
-        return
+        showMessage("追加効果のJSON形式が不正です", "error");
+        return;
       }
     }
-    
-    const response = await fetch(`${apiBaseUrl}/move/${editingMove.value._id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(moveData)
-    })
-    
+
+    const response = await fetch(
+      `${apiBaseUrl}/move/${editingMove.value._id}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(moveData),
+      }
+    );
+
     if (response.ok) {
-      showMessage('技を更新しました', 'success')
-      await fetchMoves()
-      cancelMoveEdit()
+      showMessage("技を更新しました", "success");
+      await fetchMoves();
+      cancelMoveEdit();
     } else {
-      const error = await response.json()
-      showMessage(`更新に失敗しました: ${error.message}`, 'error')
+      const error = await response.json();
+      showMessage(`更新に失敗しました: ${error.message}`, "error");
     }
   } catch (error) {
-    console.error('Error updating move:', error)
-    showMessage('技の更新に失敗しました', 'error')
+    console.error("Error updating move:", error);
+    showMessage("技の更新に失敗しました", "error");
   }
-}
+};
 
 const deleteMove = async (id) => {
-  if (!confirm('本当にこの技を削除しますか？')) return
-  
+  if (!confirm("本当にこの技を削除しますか？")) return;
+
   try {
     const response = await fetch(`${apiBaseUrl}/move/${id}`, {
-      method: 'DELETE'
-    })
-    
+      method: "DELETE",
+    });
+
     if (response.ok) {
-      showMessage('技を削除しました', 'success')
-      await fetchMoves()
+      showMessage("技を削除しました", "success");
+      await fetchMoves();
     } else {
-      showMessage('削除に失敗しました', 'error')
+      showMessage("削除に失敗しました", "error");
     }
   } catch (error) {
-    console.error('Error deleting move:', error)
-    showMessage('技の削除に失敗しました', 'error')
+    console.error("Error deleting move:", error);
+    showMessage("技の削除に失敗しました", "error");
   }
-}
+};
 
 const cancelMoveEdit = () => {
-  editingMove.value = null
-  editingMoveEffects.value = ''
-}
+  editingMove.value = null;
+  editingMoveEffects.value = "";
+};
 
 const resetMoveForm = () => {
   newMove.value = {
-    name: '',
-    type: '',
-    category: '',
+    name: "",
+    type: "",
+    category: "",
     power: 0,
     accuracy: 100,
     pp: 10,
     priority: 0,
-    description: '',
-    effectsJson: ''
-  }
-}
+    description: "",
+    effectsJson: "",
+  };
+};
 
 // 初期化
 onMounted(() => {
-  fetchMonsters()
-  fetchMoves()
-})
+  fetchMonsters();
+  fetchMoves();
+});
 </script>
 
 <style scoped>
@@ -783,7 +931,7 @@ onMounted(() => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  font-family: 'Arial', sans-serif;
+  font-family: "Arial", sans-serif;
 }
 
 h1 {
@@ -794,7 +942,7 @@ h1 {
 
 h2 {
   color: #444;
-  border-bottom: 2px solid #4CAF50;
+  border-bottom: 2px solid #4caf50;
   padding-bottom: 10px;
   margin-bottom: 20px;
 }
@@ -824,12 +972,12 @@ h3 {
 }
 
 .tabs button:hover {
-  color: #4CAF50;
+  color: #4caf50;
 }
 
 .tabs button.active {
-  color: #4CAF50;
-  border-bottom-color: #4CAF50;
+  color: #4caf50;
+  border-bottom-color: #4caf50;
   font-weight: bold;
 }
 
@@ -839,7 +987,7 @@ h3 {
   padding: 20px;
   border-radius: 8px;
   margin-bottom: 30px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .form-group {
@@ -868,7 +1016,7 @@ h3 {
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #4CAF50;
+  border-color: #4caf50;
 }
 
 .form-group small {
@@ -880,7 +1028,7 @@ h3 {
 
 /* ボタン */
 .btn-primary {
-  background-color: #4CAF50;
+  background-color: #4caf50;
   color: white;
   padding: 10px 20px;
   border: none;
@@ -910,7 +1058,7 @@ h3 {
 }
 
 .btn-edit {
-  background-color: #2196F3;
+  background-color: #2196f3;
   color: white;
   padding: 6px 12px;
   border: none;
@@ -968,14 +1116,14 @@ h3 {
   background: white;
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .monster-card:hover,
 .move-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .monster-header,
@@ -1031,36 +1179,72 @@ h3 {
 }
 
 .category-物理 {
-  background-color: #C92112;
+  background-color: #c92112;
 }
 
 .category-特殊 {
-  background-color: #4A90A4;
+  background-color: #4a90a4;
 }
 
 .category-変化 {
-  background-color: #7C7C7C;
+  background-color: #7c7c7c;
 }
 
 /* タイプカラー */
-.type-ノーマル { background-color: #A8A878; }
-.type-ほのお { background-color: #F08030; }
-.type-みず { background-color: #6890F0; }
-.type-でんき { background-color: #F8D030; }
-.type-くさ { background-color: #78C850; }
-.type-こおり { background-color: #98D8D8; }
-.type-かくとう { background-color: #C03028; }
-.type-どく { background-color: #A040A0; }
-.type-じめん { background-color: #E0C068; }
-.type-ひこう { background-color: #A890F0; }
-.type-エスパー { background-color: #F85888; }
-.type-むし { background-color: #A8B820; }
-.type-いわ { background-color: #B8A038; }
-.type-ゴースト { background-color: #705898; }
-.type-ドラゴン { background-color: #7038F8; }
-.type-あく { background-color: #705848; }
-.type-はがね { background-color: #B8B8D0; }
-.type-フェアリー { background-color: #EE99AC; }
+.type-ノーマル {
+  background-color: #a8a878;
+}
+.type-ほのお {
+  background-color: #f08030;
+}
+.type-みず {
+  background-color: #6890f0;
+}
+.type-でんき {
+  background-color: #f8d030;
+}
+.type-くさ {
+  background-color: #78c850;
+}
+.type-こおり {
+  background-color: #98d8d8;
+}
+.type-かくとう {
+  background-color: #c03028;
+}
+.type-どく {
+  background-color: #a040a0;
+}
+.type-じめん {
+  background-color: #e0c068;
+}
+.type-ひこう {
+  background-color: #a890f0;
+}
+.type-エスパー {
+  background-color: #f85888;
+}
+.type-むし {
+  background-color: #a8b820;
+}
+.type-いわ {
+  background-color: #b8a038;
+}
+.type-ゴースト {
+  background-color: #705898;
+}
+.type-ドラゴン {
+  background-color: #7038f8;
+}
+.type-あく {
+  background-color: #705848;
+}
+.type-はがね {
+  background-color: #b8b8d0;
+}
+.type-フェアリー {
+  background-color: #ee99ac;
+}
 
 .monster-stats,
 .move-stats {
@@ -1123,7 +1307,7 @@ h3 {
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .modal-actions {
@@ -1146,7 +1330,7 @@ h3 {
 }
 
 .message.success {
-  background-color: #4CAF50;
+  background-color: #4caf50;
 }
 
 .message.error {
@@ -1169,16 +1353,16 @@ h3 {
   .tabs {
     flex-direction: column;
   }
-  
+
   .tabs button {
     width: 100%;
   }
-  
+
   .monster-stats,
   .move-stats {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .modal-content {
     width: 95%;
     padding: 20px;

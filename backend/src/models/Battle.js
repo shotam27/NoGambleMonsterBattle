@@ -33,6 +33,18 @@ const partyMemberSchema = new mongoose.Schema({
     magicAttack: { type: Number, default: 0, min: -2, max: 2 },
     magicDefense: { type: Number, default: 0, min: -2, max: 2 },
     speed: { type: Number, default: 0, min: -2, max: 2 }
+  },
+  hasSubstitute: {
+    type: Boolean,
+    default: false
+  },
+  substituteHp: {
+    type: Number,
+    default: 0
+  },
+  hasInjection: {
+    type: Boolean,
+    default: false
   }
 }, { 
   _id: false,
@@ -98,6 +110,10 @@ const battleSchema = new mongoose.Schema({
     attacker: String,
     moveId: String,
     damage: Number
+  },
+  pendingSwitchAfterAttack: {
+    player: { type: Boolean, default: false },
+    opponent: { type: Boolean, default: false }
   }
 }, {
   timestamps: true,

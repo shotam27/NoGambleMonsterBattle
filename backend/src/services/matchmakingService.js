@@ -87,7 +87,10 @@ function initialize(socketIO) {
         const playerSide = battleSession.player1SocketId === socket.id ? 'player1' : 'player2';
         
         // バトルを取得
-        const battle = await Battle.findById(battleId).populate('player.party.monsterId opponent.party.monsterId');
+        const battle = await Battle.findById(battleId).populate([
+          { path: 'player.party.monsterId', populate: { path: 'moves' } },
+          { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+        ]);
         if (!battle) {
           socket.emit('error', { message: 'バトルデータが見つかりません' });
           return;
@@ -220,6 +223,54 @@ function initialize(socketIO) {
       } catch (error) {
         console.error('Error in player-action:', error);
         socket.emit('error', { message: 'アクション処理エラーが発生しました' });
+      }
+    });
+
+    // アクションキャンセル
+    socket.on('cancel-action', async (data) => {
+      try {
+        console.log('=== cancel-action event received ===');
+        console.log('Socket ID:', socket.id);
+        const { battleId } = data;
+        
+        const battleSession = activeBattles.get(battleId);
+        if (!battleSession) {
+          socket.emit('error', { message: 'バトルが見つかりません' });
+          return;
+        }
+
+        // どちらのプレイヤーか判定
+        const playerSide = battleSession.player1SocketId === socket.id ? 'player1' : 'player2';
+        
+        // バトルを取得
+        const battle = await Battle.findById(battleId).populate([
+          { path: 'player.party.monsterId', populate: { path: 'moves' } },
+          { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+        ]);
+        if (!battle) {
+          socket.emit('error', { message: 'バトルデータが見つかりません' });
+          return;
+        }
+
+        // アクションをクリア
+        if (playerSide === 'player1') {
+          battle.player.selectedAction = { type: null };
+        } else {
+          battle.opponent.selectedAction = { type: null };
+        }
+
+        await battle.save();
+        
+        console.log('Action cancelled for', playerSide);
+        
+        // キャンセル完了を通知
+        socket.emit('action-cancelled', {
+          battle: battle,
+          yourSide: playerSide === 'player1' ? 'player' : 'opponent'
+        });
+      } catch (error) {
+        console.error('Error in cancel-action:', error);
+        socket.emit('error', { message: 'アクションキャンセルエラーが発生しました' });
       }
     });
 
