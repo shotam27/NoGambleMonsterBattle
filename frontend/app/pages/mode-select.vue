@@ -595,7 +595,7 @@ const startAIBattle = async () => {
     console.log("startAIBattle: playerIds =", playerIds);
 
     // ランダムに対戦相手を選択
-    const response = await fetch("${apiBaseUrl}/monster");
+    const response = await fetch(`${apiBaseUrl}/monster`);
     const allMonsters = await response.json();
     console.log("startAIBattle: Fetched monsters, count =", allMonsters.length);
     const availableOpponents = allMonsters.filter(
@@ -613,7 +613,7 @@ const startAIBattle = async () => {
     );
 
     // バトル作成
-    const battleResponse = await fetch("${apiBaseUrl}/battle/start", {
+    const battleResponse = await fetch(`${apiBaseUrl}/battle/start`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

@@ -134,7 +134,7 @@ onMounted(async () => {
     }
 
     // Start battle
-    const response = await fetch("${apiBaseUrl}/battle/start", {
+    const response = await fetch(`${apiBaseUrl}/battle/start`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
