@@ -309,7 +309,7 @@ const openAddModal = () => {
     type: "",
     category: "physical",
     power: 0,
-    priority: 0,
+    priority: 2,
     description: "",
     statusEffect: "",
     switchAfterAttack: false,
