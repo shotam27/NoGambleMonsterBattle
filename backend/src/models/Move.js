@@ -68,6 +68,16 @@ const moveSchema = new mongoose.Schema({
   isProtect: {
     type: Boolean,
     default: false
+  },
+  healsUser: {
+    type: Boolean,
+    default: false
+  },
+  healPercentage: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0
   }
 }, {
   timestamps: true

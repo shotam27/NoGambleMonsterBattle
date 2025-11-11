@@ -541,6 +541,21 @@ function processMoves(battle) {
         attackerMember.usedProtectLastTurn = false;
       }
       
+      // Handle heal move
+      if (move.healsUser) {
+        const healAmount = Math.floor(attackerMember.maxHp * move.healPercentage / 100);
+        const previousHp = attackerMember.currentHp;
+        attackerMember.currentHp = Math.min(attackerMember.maxHp, attackerMember.currentHp + healAmount);
+        const actualHeal = attackerMember.currentHp - previousHp;
+        
+        battleLog.push({
+          message: `${attackerMember.monsterId.name}はHPを${actualHeal}回復した！`,
+          attacker: name,
+          move: move.name
+        });
+        continue;
+      }
+      
       // Handle substitute move
       if (move.createsSubstitute) {
         // Cannot create substitute if already has one

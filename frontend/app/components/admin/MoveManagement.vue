@@ -77,6 +77,10 @@
             <div v-if="move.isProtect" class="move-effects">
               <strong>効果:</strong> まもる（ガード技）
             </div>
+
+            <div v-if="move.healsUser" class="move-effects">
+              <strong>効果:</strong> 回復技（{{ move.healPercentage }}%）
+            </div>
           </div>
         </div>
       </div>
@@ -221,6 +225,22 @@
                 まもる（ガード技）
               </label>
             </div>
+            <div class="form-group">
+              <label>
+                <input type="checkbox" v-model="editingMove.healsUser" />
+                回復技
+              </label>
+            </div>
+            <div class="form-group" v-if="editingMove.healsUser">
+              <label>回復割合 (%):</label>
+              <input
+                type="number"
+                v-model.number="editingMove.healPercentage"
+                min="0"
+                max="100"
+                required
+              />
+            </div>
           </div>
 
           <div class="modal-actions">
@@ -316,6 +336,8 @@ const openAddModal = () => {
     createsSubstitute: false,
     causesInjection: false,
     isProtect: false,
+    healsUser: false,
+    healPercentage: 0,
   };
   statChangeTarget.value = "";
   statChangeStat.value = "";
