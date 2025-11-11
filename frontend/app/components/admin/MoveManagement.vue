@@ -73,6 +73,10 @@
             <div v-if="move.causesInjection" class="move-effects">
               <strong>効果:</strong> 注射
             </div>
+
+            <div v-if="move.isProtect" class="move-effects">
+              <strong>効果:</strong> まもる（ガード技）
+            </div>
           </div>
         </div>
       </div>
@@ -81,12 +85,20 @@
     <!-- 追加/編集モーダル -->
     <div v-if="editingMove" class="modal" @click.self="cancelEdit">
       <div class="modal-content">
-        <h3>{{ isAddMode ? '技追加' : '技編集' }}</h3>
+        <h3>{{ isAddMode ? "技追加" : "技編集" }}</h3>
         <form @submit.prevent="saveMove">
           <div class="form-group">
             <label>技ID:</label>
-            <input v-model="editingMove.id" type="text" required :disabled="!isAddMode" />
-            <small v-if="isAddMode">英数字で一意のIDを入力してください（例: tackle, flamethrower）</small>
+            <input
+              v-model="editingMove.id"
+              type="text"
+              required
+              :disabled="!isAddMode"
+            />
+            <small v-if="isAddMode"
+              >英数字で一意のIDを入力してください（例: tackle,
+              flamethrower）</small
+            >
           </div>
 
           <div class="form-group">
@@ -203,6 +215,12 @@
                 注射
               </label>
             </div>
+            <div class="form-group">
+              <label>
+                <input type="checkbox" v-model="editingMove.isProtect" />
+                まもる（ガード技）
+              </label>
+            </div>
           </div>
 
           <div class="modal-actions">
@@ -286,21 +304,22 @@ const fetchMoves = async () => {
 const openAddModal = () => {
   isAddMode.value = true;
   editingMove.value = {
-    id: '',
-    name: '',
-    type: '',
-    category: 'physical',
+    id: "",
+    name: "",
+    type: "",
+    category: "physical",
     power: 0,
     priority: 0,
-    description: '',
-    statusEffect: '',
+    description: "",
+    statusEffect: "",
     switchAfterAttack: false,
     createsSubstitute: false,
-    causesInjection: false
+    causesInjection: false,
+    isProtect: false,
   };
-  statChangeTarget.value = '';
-  statChangeStat.value = '';
-  statChangeStages.value = '';
+  statChangeTarget.value = "";
+  statChangeStat.value = "";
+  statChangeStages.value = "";
 };
 
 const editMove = (move) => {

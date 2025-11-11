@@ -41,7 +41,7 @@
           <div class="item-info">
             <div class="type-badges">
               <span
-                v-for="(t, idx) in (monster.type || [])"
+                v-for="(t, idx) in monster.type || []"
                 :key="idx"
                 class="type-badge"
                 :class="`type-${t?.toLowerCase()}`"
@@ -85,8 +85,16 @@
         <form @submit.prevent="saveMonster">
           <div class="form-group">
             <label>モンスターID:</label>
-            <input v-model="editingMonster.id" type="text" required :disabled="!isAddMode" />
-            <small v-if="isAddMode">英数字で一意のIDを入力してください（例: pikachu, charizard）</small>
+            <input
+              v-model="editingMonster.id"
+              type="text"
+              required
+              :disabled="!isAddMode"
+            />
+            <small v-if="isAddMode"
+              >英数字で一意のIDを入力してください（例: pikachu,
+              charizard）</small
+            >
           </div>
 
           <div class="form-group">

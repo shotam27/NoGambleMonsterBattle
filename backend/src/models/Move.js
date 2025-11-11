@@ -64,6 +64,10 @@ const moveSchema = new mongoose.Schema({
   causesInjection: {
     type: Boolean,
     default: false
+  },
+  isProtect: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

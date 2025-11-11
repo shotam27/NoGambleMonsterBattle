@@ -45,6 +45,10 @@ const partyMemberSchema = new mongoose.Schema({
   hasInjection: {
     type: Boolean,
     default: false
+  },
+  usedProtectLastTurn: {
+    type: Boolean,
+    default: false
   }
 }, { 
   _id: false,

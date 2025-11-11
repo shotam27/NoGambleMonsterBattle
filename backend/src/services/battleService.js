@@ -180,6 +180,13 @@ function processDamage(battle, attacker, defender, move) {
   
   let damage = 0;
   
+  // Check if defender is protecting
+  if (defenderMember.isProtecting) {
+    console.log('Defender is protecting, move blocked');
+    defenderMember.isProtecting = false; // Reset protect flag after blocking
+    return 0; // No damage or status effects applied
+  }
+  
   // Status moves don't deal damage but inflict status or stat changes
   if (move.category === 'status') {
     // Substitute blocks status effects and stat debuffs (but not self-buffs)
@@ -508,6 +515,32 @@ function processMoves(battle) {
         continue;
       }
       
+      // Handle protect move
+      if (move.isProtect) {
+        // Cannot use protect consecutively
+        if (attackerMember.usedProtectLastTurn) {
+          battleLog.push({
+            message: `${attackerMember.monsterId.name}のまもるは失敗した！`
+          });
+          attackerMember.usedProtectLastTurn = false; // Reset after failed attempt
+          continue;
+        }
+        
+        // Set protect flag for this turn
+        attackerMember.isProtecting = true;
+        attackerMember.usedProtectLastTurn = true;
+        
+        battleLog.push({
+          message: `${attackerMember.monsterId.name}はまもる状態になった！`,
+          attacker: name,
+          move: move.name
+        });
+        continue;
+      } else {
+        // Not using protect this turn, reset the flag
+        attackerMember.usedProtectLastTurn = false;
+      }
+      
       // Handle substitute move
       if (move.createsSubstitute) {
         // Cannot create substitute if already has one
@@ -577,9 +610,18 @@ function processMoves(battle) {
       
       // Store defender's substitute state before damage
       const hadSubstitute = defenderMember.hasSubstitute;
+      const wasProtecting = defenderMember.isProtecting;
       
       // Process damage or status effect
       const damage = processDamage(battle, side, opponent, move);
+      
+      // Check if move was blocked by protect
+      if (wasProtecting && damage === 0) {
+        battleLog.push({
+          message: `${defenderMember.monsterId.name}はまもるで攻撃を防いだ！`
+        });
+        continue; // Skip all subsequent effects
+      }
       
       // Check if substitute was broken
       const substituteBroken = hadSubstitute && !defenderMember.hasSubstitute;
