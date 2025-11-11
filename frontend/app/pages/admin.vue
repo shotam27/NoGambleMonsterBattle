@@ -3,16 +3,25 @@
     <h1>管理画面</h1>
 
     <div class="tabs">
-      <button :class="{ active: activeTab === 'monsters' }" @click="activeTab = 'monsters'">
+      <button
+        :class="{ active: activeTab === 'monsters' }"
+        @click="activeTab = 'monsters'"
+      >
         モンスター管理
       </button>
-      <button :class="{ active: activeTab === 'moves' }" @click="activeTab = 'moves'">
+      <button
+        :class="{ active: activeTab === 'moves' }"
+        @click="activeTab = 'moves'"
+      >
         技管理
       </button>
     </div>
 
     <div class="tab-content">
-      <MonsterManagement v-if="activeTab === 'monsters'" @message="showMessage" />
+      <MonsterManagement
+        v-if="activeTab === 'monsters'"
+        @message="showMessage"
+      />
       <MoveManagement v-if="activeTab === 'moves'" @message="showMessage" />
     </div>
 
@@ -23,30 +32,29 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import MonsterManagement from '~/components/admin/MonsterManagement.vue';
-import MoveManagement from '~/components/admin/MoveManagement.vue';
+import { ref } from "vue";
+import MonsterManagement from "~/components/admin/MonsterManagement.vue";
+import MoveManagement from "~/components/admin/MoveManagement.vue";
 
-const activeTab = ref('monsters');
-const message = ref('');
-const messageType = ref('success');
+const activeTab = ref("monsters");
+const message = ref("");
+const messageType = ref("success");
 
-const showMessage = (msg, type = 'success') => {
+const showMessage = (msg, type = "success") => {
   message.value = msg;
   messageType.value = type;
   setTimeout(() => {
-    message.value = '';
+    message.value = "";
   }, 3000);
 };
 </script>
-
 
 <style scoped>
 .admin-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  font-family: 'Arial', sans-serif;
+  font-family: "Arial", sans-serif;
 }
 
 h1 {
