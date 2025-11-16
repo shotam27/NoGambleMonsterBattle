@@ -1,13 +1,13 @@
 <template>
   <div class="relative group">
     <button
-      class="text-white font-bold py-4 px-6 rounded-lg transition-colors w-full"
+      class="text-white font-bold py-3 lg:py-4 px-4 lg:px-6 rounded-lg transition-colors w-full"
       :class="typeColor"
       @click="$emit('click')"
     >
       <div class="text-left">
-        <p class="text-lg font-bold">{{ move.name }}</p>
-        <div class="flex justify-between text-sm mt-1">
+        <p class="text-base lg:text-lg font-bold">{{ move.name }}</p>
+        <div class="flex justify-between text-xs lg:text-sm mt-1">
           <span>威力: {{ move.power }}</span>
           <span class="uppercase">{{ typeLabel }}</span>
         </div>
@@ -20,7 +20,7 @@
     <!-- Description Tooltip -->
     <div
       v-if="move.description"
-      class="absolute left-0 bottom-full mb-2 bg-gray-900 border-2 border-blue-500 rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none min-w-max max-w-xs"
+      class="absolute left-0 bottom-full mb-2 bg-gray-900 border-2 border-blue-500 rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none min-w-max max-w-xs hidden lg:block"
     >
       <p class="text-sm text-gray-100">{{ move.description }}</p>
     </div>

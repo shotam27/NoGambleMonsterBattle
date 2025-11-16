@@ -1,21 +1,25 @@
 <template>
-  <div class="min-h-screen bg-gray-900 text-white p-8">
+  <div class="min-h-screen bg-gray-900 text-white p-4 lg:p-8">
     <div class="max-w-7xl mx-auto">
-      <h1 class="text-4xl font-bold mb-4 text-center">モンスターを3体選択</h1>
-      <p class="text-center mb-8 text-gray-400">
+      <h1 class="text-2xl lg:text-4xl font-bold mb-3 lg:mb-4 text-center">
+        モンスターを3体選択
+      </h1>
+      <p class="text-center mb-4 lg:mb-8 text-sm lg:text-base text-gray-400">
         選択中: {{ selectedMonsters.length }}/3
       </p>
 
       <div v-if="loading" class="text-center">
-        <p class="text-xl">読み込み中...</p>
+        <p class="text-lg lg:text-xl">読み込み中...</p>
       </div>
 
       <div v-else-if="error" class="text-center text-red-400">
-        <p class="text-xl">{{ error }}</p>
+        <p class="text-lg lg:text-xl">{{ error }}</p>
       </div>
 
       <div v-else>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 lg:gap-4"
+        >
           <MonsterCard
             v-for="monster in monsters"
             :key="monster._id"
@@ -25,11 +29,11 @@
           />
         </div>
 
-        <div class="mt-8 text-center">
+        <div class="mt-6 lg:mt-8 text-center">
           <button
             v-if="selectedMonsters.length === 3"
             @click="proceedToModeSelection"
-            class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-4 px-8 rounded-lg text-xl transition-colors"
+            class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 lg:py-4 px-6 lg:px-8 rounded-lg text-lg lg:text-xl transition-colors w-full sm:w-auto"
           >
             次へ
           </button>

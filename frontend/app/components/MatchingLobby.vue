@@ -3,32 +3,39 @@
     class="min-h-screen bg-gradient-to-b from-purple-50 to-pink-50 flex items-center justify-center p-4"
   >
     <div class="max-w-2xl w-full">
-      <div class="bg-white rounded-2xl shadow-2xl p-8">
-        <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">
+      <div class="bg-white rounded-2xl shadow-2xl p-6 lg:p-8">
+        <h1
+          class="text-3xl lg:text-4xl font-bold text-center mb-6 lg:mb-8 text-gray-800"
+        >
           マッチング中...
         </h1>
 
         <!-- ローディングアニメーション -->
-        <div class="flex justify-center mb-8">
+        <div class="flex justify-center mb-6 lg:mb-8">
           <div class="relative">
             <div
-              class="w-32 h-32 border-8 border-purple-200 rounded-full"
+              class="w-24 h-24 lg:w-32 lg:h-32 border-6 lg:border-8 border-purple-200 rounded-full"
             ></div>
             <div
-              class="absolute top-0 left-0 w-32 h-32 border-8 border-purple-600 rounded-full border-t-transparent animate-spin"
+              class="absolute top-0 left-0 w-24 h-24 lg:w-32 lg:h-32 border-6 lg:border-8 border-purple-600 rounded-full border-t-transparent animate-spin"
             ></div>
           </div>
         </div>
 
         <!-- 待機中のメッセージ -->
-        <div class="text-center mb-8">
-          <p class="text-xl text-gray-600 mb-4">対戦相手を探しています...</p>
+        <div class="text-center mb-6 lg:mb-8">
+          <p class="text-lg lg:text-xl text-gray-600 mb-3 lg:mb-4">
+            対戦相手を探しています...
+          </p>
           <p class="text-sm text-gray-500">待機中: {{ waitingTime }}秒</p>
         </div>
 
         <!-- 待機プレイヤー数 -->
-        <div v-if="waitingPlayers > 0" class="bg-purple-50 rounded-lg p-4 mb-6">
-          <p class="text-center text-purple-700">
+        <div
+          v-if="waitingPlayers > 0"
+          class="bg-purple-50 rounded-lg p-3 lg:p-4 mb-4 lg:mb-6"
+        >
+          <p class="text-center text-purple-700 text-sm lg:text-base">
             <span class="font-semibold">{{ waitingPlayers }}</span> 人が待機中
           </p>
         </div>
@@ -37,7 +44,7 @@
         <div class="text-center">
           <button
             @click="cancelMatching"
-            class="px-8 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-colors"
+            class="w-full sm:w-auto px-6 lg:px-8 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-colors text-base lg:text-lg"
           >
             キャンセル
           </button>

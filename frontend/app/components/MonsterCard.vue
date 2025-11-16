@@ -1,24 +1,24 @@
 <template>
   <div
-    class="bg-gray-800 rounded-lg p-4 cursor-pointer hover:bg-gray-700 transition-all border-4 relative overflow-hidden"
+    class="bg-gray-800 rounded-lg p-3 lg:p-4 cursor-pointer hover:bg-gray-700 transition-all border-4 relative overflow-hidden"
     :class="[{ 'ring-4 ring-yellow-400 transform scale-105': isSelected }]"
     :style="borderStyle"
     @click="$emit('select')"
   >
-    <div class="text-center mb-3 relative">
+    <div class="text-center mb-2 lg:mb-3 relative">
       <div
         v-if="isSelected"
-        class="absolute -top-2 -right-2 bg-yellow-500 text-gray-900 rounded-full w-6 h-6 flex items-center justify-center font-bold z-10 text-sm"
+        class="absolute -top-2 -right-2 bg-yellow-500 text-gray-900 rounded-full w-6 h-6 lg:w-7 lg:h-7 flex items-center justify-center font-bold z-10 text-sm lg:text-base"
       >
         ✓
       </div>
-      <h3 class="text-xl font-bold">{{ monster.name }}</h3>
+      <h3 class="text-lg lg:text-xl font-bold">{{ monster.name }}</h3>
       <p class="text-xs uppercase tracking-wide" :class="typeTextColor">
         {{ typeLabel }}
       </p>
     </div>
 
-    <div class="space-y-1 text-sm">
+    <div class="space-y-0.5 lg:space-y-1 text-xs lg:text-sm">
       <div class="flex justify-between">
         <span>HP:</span>
         <span class="font-bold">{{ monster.stats.hp }}</span>
@@ -45,9 +45,9 @@
       </div>
     </div>
 
-    <div class="mt-3 pt-3 border-t border-gray-600">
+    <div class="mt-2 lg:mt-3 pt-2 lg:pt-3 border-t border-gray-600">
       <p class="text-xs font-semibold mb-1">技:</p>
-      <ul class="text-xs space-y-1">
+      <ul class="text-xs space-y-0.5 lg:space-y-1">
         <li
           v-for="move in monster.moves"
           :key="move.id"

@@ -3,20 +3,24 @@
     <!-- Battle Arena -->
     <div
       v-if="playerParty.length > 0 && opponentParty.length > 0"
-      class="grid grid-cols-2 gap-8 mb-8"
+      class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8 mb-4 lg:mb-8"
     >
       <!-- Player Side -->
-      <div class="bg-gray-800 rounded-lg p-6">
-        <h3 class="text-xl font-bold mb-4 text-blue-400">あなたのパーティ</h3>
+      <div class="bg-gray-800 rounded-lg p-4 lg:p-6">
+        <h3 class="text-lg lg:text-xl font-bold mb-3 lg:mb-4 text-blue-400">
+          あなたのパーティ
+        </h3>
 
         <!-- Active Monster -->
         <div
-          class="mb-4 p-4 rounded-lg relative group border-4"
+          class="mb-3 lg:mb-4 p-3 lg:p-4 rounded-lg relative group border-4"
           :style="getMonsterBoxStyle(activePlayerMonster)"
         >
           <div v-if="activePlayerMonster" class="mb-2">
-            <p class="text-2xl font-bold">{{ activePlayerMonster.name }}</p>
-            <p class="text-sm text-gray-400">
+            <p class="text-xl lg:text-2xl font-bold">
+              {{ activePlayerMonster.name }}
+            </p>
+            <p class="text-xs lg:text-sm text-gray-400">
               {{ typeLabel(activePlayerMonster.type) }}
             </p>
           </div>
@@ -27,7 +31,7 @@
           />
           <div
             v-if="playerParty[playerActiveIndex]"
-            class="mt-2 text-sm text-center"
+            class="mt-2 text-xs lg:text-sm text-center"
           >
             {{ playerParty[playerActiveIndex].currentHp }} /
             {{ playerParty[playerActiveIndex].maxHp }} HP
@@ -146,7 +150,7 @@
           <!-- Hover Stats Tooltip -->
           <div
             v-if="activePlayerMonster"
-            class="absolute left-0 top-full mt-2 bg-gray-900 border-2 border-blue-500 rounded-lg p-4 opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none min-w-max"
+            class="absolute left-0 top-full mt-2 bg-gray-900 border-2 border-blue-500 rounded-lg p-4 opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none min-w-max hidden lg:block"
           >
             <div class="text-sm space-y-1">
               <div class="flex justify-between gap-4">
@@ -269,12 +273,12 @@
         </div>
 
         <!-- Party Members -->
-        <div class="grid grid-cols-3 gap-2">
+        <div class="grid grid-cols-3 gap-1 lg:gap-2">
           <div
             v-for="(member, index) in playerParty"
             :key="index"
             :class="[
-              'p-2 rounded text-center text-sm relative group cursor-pointer',
+              'p-1.5 lg:p-2 rounded text-center text-xs lg:text-sm relative group cursor-pointer',
               index === playerActiveIndex ? 'bg-yellow-600' : 'bg-gray-700',
               member.isFainted ? 'opacity-50' : '',
             ]"
@@ -293,7 +297,7 @@
             <!-- Hover Stats Tooltip for Party Members -->
             <div
               v-if="member.monsterId && index !== playerActiveIndex"
-              class="absolute left-0 top-full mt-2 bg-gray-900 border-2 border-blue-500 rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none min-w-max"
+              class="absolute left-0 top-full mt-2 bg-gray-900 border-2 border-blue-500 rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none min-w-max hidden lg:block"
             >
               <div class="text-xs space-y-1">
                 <div class="font-bold mb-1">{{ member.monsterId.name }}</div>
@@ -338,16 +342,20 @@
       </div>
 
       <!-- Opponent Side -->
-      <div class="bg-gray-800 rounded-lg p-6">
-        <h3 class="text-xl font-bold mb-4 text-red-400">相手のパーティ</h3>
+      <div class="bg-gray-800 rounded-lg p-4 lg:p-6">
+        <h3 class="text-lg lg:text-xl font-bold mb-3 lg:mb-4 text-red-400">
+          相手のパーティ
+        </h3>
 
         <!-- Active Monster -->
         <div
-          class="mb-4 p-4 rounded-lg relative group border-4"
+          class="mb-3 lg:mb-4 p-3 lg:p-4 rounded-lg relative group border-4"
           :style="getMonsterBoxStyle(activeOpponentMonster)"
         >
           <div v-if="activeOpponentMonster" class="mb-2">
-            <p class="text-2xl font-bold">{{ activeOpponentMonster.name }}</p>
+            <p class="text-xl lg:text-2xl font-bold">
+              {{ activeOpponentMonster.name }}
+            </p>
             <p class="text-sm text-gray-400">
               {{ typeLabel(activeOpponentMonster.type) }}
             </p>
@@ -617,12 +625,12 @@
         </div>
 
         <!-- Party Members -->
-        <div class="grid grid-cols-3 gap-2">
+        <div class="grid grid-cols-3 gap-1 lg:gap-2">
           <div
             v-for="(member, index) in opponentParty"
             :key="index"
             :class="[
-              'p-2 rounded text-center text-sm relative group cursor-pointer',
+              'p-1.5 lg:p-2 rounded text-center text-xs lg:text-sm relative group cursor-pointer',
               index === opponentActiveIndex ? 'bg-yellow-600' : 'bg-gray-700',
               member.isFainted ? 'opacity-50' : '',
             ]"
@@ -641,7 +649,7 @@
             <!-- Hover Stats Tooltip for Party Members -->
             <div
               v-if="member.monsterId && index !== opponentActiveIndex"
-              class="absolute right-0 top-full mt-2 bg-gray-900 border-2 border-red-500 rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none min-w-max"
+              class="absolute right-0 top-full mt-2 bg-gray-900 border-2 border-red-500 rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none min-w-max hidden lg:block"
             >
               <div class="text-xs space-y-1">
                 <div class="font-bold mb-1">{{ member.monsterId.name }}</div>
@@ -701,9 +709,9 @@
     </div>
 
     <!-- Move Selection -->
-    <div v-if="isPlayerTurn" class="bg-gray-800 rounded-lg p-6">
-      <h3 class="text-xl font-bold mb-4">技を選択</h3>
-      <div class="grid grid-cols-2 gap-4">
+    <div v-if="isPlayerTurn" class="bg-gray-800 rounded-lg p-4 lg:p-6">
+      <h3 class="text-lg lg:text-xl font-bold mb-3 lg:mb-4">技を選択</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 lg:gap-4">
         <MoveButton
           v-for="move in activePlayerMonster?.moves || []"
           :key="move.id"
@@ -713,18 +721,18 @@
       </div>
 
       <!-- Switch Button - Opens modal -->
-      <div class="mt-4">
+      <div class="mt-3 lg:mt-4">
         <button
           @click="$emit('open-switch-modal')"
-          class="w-full px-4 py-3 bg-purple-600 hover:bg-purple-700 rounded font-bold"
+          class="w-full px-4 py-3 lg:py-4 bg-purple-600 hover:bg-purple-700 rounded font-bold text-base lg:text-lg"
         >
           モンスターを交代する
         </button>
       </div>
     </div>
 
-    <div v-else class="bg-gray-800 rounded-lg p-6 text-center">
-      <p class="text-xl">相手のターン...</p>
+    <div v-else class="bg-gray-800 rounded-lg p-4 lg:p-6 text-center">
+      <p class="text-lg lg:text-xl">相手のターン...</p>
     </div>
   </div>
 </template>

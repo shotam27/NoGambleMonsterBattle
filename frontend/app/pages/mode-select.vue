@@ -1,5 +1,5 @@
 ﻿<template>
-  <div class="min-h-screen bg-gray-900 text-white p-8">
+  <div class="min-h-screen bg-gray-900 text-white p-4 lg:p-8">
     <div class="max-w-6xl mx-auto">
       <!-- モード選択画面 -->
       <BattleModeSelection
@@ -17,10 +17,12 @@
 
       <!-- バトル画面 -->
       <div v-else-if="currentView === 'battle'">
-        <h1 class="text-4xl font-bold mb-8 text-center">バトル</h1>
+        <h1 class="text-2xl lg:text-4xl font-bold mb-4 lg:mb-8 text-center">
+          バトル
+        </h1>
 
         <!-- Debug info -->
-        <div class="text-center mb-4 text-yellow-400 text-sm">
+        <div class="text-center mb-4 text-yellow-400 text-xs lg:text-sm">
           Debug: loading={{ loading }}, error={{ error }}, battleState={{
             battleState ? "exists" : "null"
           }}
@@ -68,20 +70,22 @@
           <!-- Forced Switch Modal (when monster fainted) -->
           <div
             v-if="requiresSwitch"
-            class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+            class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
           >
-            <div class="bg-gray-800 p-8 rounded-lg max-w-2xl">
-              <h2 class="text-2xl font-bold mb-4">
+            <div
+              class="bg-gray-800 p-4 lg:p-8 rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto"
+            >
+              <h2 class="text-xl lg:text-2xl font-bold mb-3 lg:mb-4">
                 {{ switchModalTitle }}
               </h2>
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 lg:gap-4">
                 <button
                   v-for="(member, index) in playerParty"
                   :key="index"
                   :disabled="member.isFainted || index === playerActiveIndex"
                   @click="switchMonster(index)"
                   :class="[
-                    'p-4 rounded-lg text-left transition-colors relative group',
+                    'p-3 lg:p-4 rounded-lg text-left transition-colors relative group',
                     member.isFainted
                       ? 'bg-gray-700 opacity-50 cursor-not-allowed'
                       : index === playerActiveIndex
@@ -89,18 +93,21 @@
                       : 'bg-blue-600 hover:bg-blue-700 cursor-pointer',
                   ]"
                 >
-                  <div class="font-bold">
+                  <div class="font-bold text-sm lg:text-base">
                     {{ member.monsterId?.name || "モンスター" }}
                   </div>
-                  <div class="text-sm">
+                  <div class="text-xs lg:text-sm">
                     HP: {{ member.currentHp }} / {{ member.maxHp }}
                   </div>
-                  <div v-if="member.isFainted" class="text-red-400 text-sm">
+                  <div
+                    v-if="member.isFainted"
+                    class="text-red-400 text-xs lg:text-sm"
+                  >
                     ひんし
                   </div>
                   <div
                     v-else-if="index === playerActiveIndex"
-                    class="text-yellow-400 text-sm"
+                    class="text-yellow-400 text-xs lg:text-sm"
                   >
                     戦闘中
                   </div>
@@ -108,7 +115,7 @@
                   <!-- Hover Stats Tooltip -->
                   <div
                     v-if="member.monsterId"
-                    class="absolute left-0 top-full mt-2 bg-gray-900 border-2 border-blue-500 rounded-lg p-4 opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none min-w-max"
+                    class="absolute left-0 top-full mt-2 bg-gray-900 border-2 border-blue-500 rounded-lg p-4 opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none min-w-max hidden lg:block"
                   >
                     <div class="text-sm space-y-1">
                       <div class="font-bold mb-2">
@@ -163,18 +170,24 @@
           <!-- Voluntary Switch Modal (when player chooses to switch) -->
           <div
             v-if="showSwitchModal"
-            class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+            class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
           >
-            <div class="bg-gray-800 p-8 rounded-lg max-w-2xl">
-              <h2 class="text-2xl font-bold mb-4">交代するモンスターを選択</h2>
-              <div class="grid grid-cols-2 gap-4 mb-4">
+            <div
+              class="bg-gray-800 p-4 lg:p-8 rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto"
+            >
+              <h2 class="text-xl lg:text-2xl font-bold mb-3 lg:mb-4">
+                交代するモンスターを選択
+              </h2>
+              <div
+                class="grid grid-cols-1 sm:grid-cols-2 gap-2 lg:gap-4 mb-3 lg:mb-4"
+              >
                 <button
                   v-for="(member, index) in playerParty"
                   :key="index"
                   :disabled="member.isFainted || index === playerActiveIndex"
                   @click="handleVoluntarySwitch(index)"
                   :class="[
-                    'p-4 rounded-lg text-left transition-colors relative group',
+                    'p-3 lg:p-4 rounded-lg text-left transition-colors relative group',
                     member.isFainted
                       ? 'bg-gray-700 opacity-50 cursor-not-allowed'
                       : index === playerActiveIndex
@@ -182,18 +195,21 @@
                       : 'bg-blue-600 hover:bg-blue-700 cursor-pointer',
                   ]"
                 >
-                  <div class="font-bold">
+                  <div class="font-bold text-sm lg:text-base">
                     {{ member.monsterId?.name || "モンスター" }}
                   </div>
-                  <div class="text-sm">
+                  <div class="text-xs lg:text-sm">
                     HP: {{ member.currentHp }} / {{ member.maxHp }}
                   </div>
-                  <div v-if="member.isFainted" class="text-red-400 text-sm">
+                  <div
+                    v-if="member.isFainted"
+                    class="text-red-400 text-xs lg:text-sm"
+                  >
                     ひんし
                   </div>
                   <div
                     v-else-if="index === playerActiveIndex"
-                    class="text-yellow-400 text-sm"
+                    class="text-yellow-400 text-xs lg:text-sm"
                   >
                     戦闘中
                   </div>
@@ -201,7 +217,7 @@
                   <!-- Hover Stats Tooltip -->
                   <div
                     v-if="member.monsterId"
-                    class="absolute left-0 top-full mt-2 bg-gray-900 border-2 border-blue-500 rounded-lg p-4 opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none min-w-max"
+                    class="absolute left-0 top-full mt-2 bg-gray-900 border-2 border-blue-500 rounded-lg p-4 opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none min-w-max hidden lg:block"
                   >
                     <div class="text-sm space-y-1">
                       <div class="font-bold mb-2">
@@ -252,7 +268,7 @@
               </div>
               <button
                 @click="closeSwitchModal"
-                class="w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded"
+                class="w-full px-4 py-3 lg:py-4 bg-gray-600 hover:bg-gray-700 rounded text-base lg:text-lg font-bold"
               >
                 キャンセル
               </button>
@@ -591,25 +607,24 @@ const startAIBattle = async () => {
   try {
     console.log("startAIBattle: Starting...");
     loading.value = true;
-    const playerIds = route.query.playerIds.split(",");
-    console.log("startAIBattle: playerIds =", playerIds);
 
-    // ランダムに対戦相手を選択
+    // 全モンスターを取得
     const response = await fetch(`${apiBaseUrl}/monster`);
     const allMonsters = await response.json();
     console.log("startAIBattle: Fetched monsters, count =", allMonsters.length);
-    const availableOpponents = allMonsters.filter(
-      (m) => !playerIds.includes(m._id)
-    );
-    const opponents = [];
-    for (let i = 0; i < 3 && availableOpponents.length > 0; i++) {
-      const randomIndex = Math.floor(Math.random() * availableOpponents.length);
-      opponents.push(availableOpponents[randomIndex]);
-      availableOpponents.splice(randomIndex, 1);
-    }
+
+    // ランダムにプレイヤーのモンスターを選択
+    const shuffledMonsters = [...allMonsters].sort(() => Math.random() - 0.5);
+    const playerMonsters = shuffledMonsters.slice(0, 3);
+    const opponentMonsters = shuffledMonsters.slice(3, 6);
+
     console.log(
-      "startAIBattle: Selected opponents =",
-      opponents.map((o) => o._id)
+      "startAIBattle: Selected player monsters =",
+      playerMonsters.map((m) => m._id)
+    );
+    console.log(
+      "startAIBattle: Selected opponent monsters =",
+      opponentMonsters.map((m) => m._id)
     );
 
     // バトル作成
@@ -617,8 +632,8 @@ const startAIBattle = async () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        playerMonsterIds: playerIds,
-        opponentMonsterIds: opponents.map((m) => m._id),
+        playerMonsterIds: playerMonsters.map((m) => m._id),
+        opponentMonsterIds: opponentMonsters.map((m) => m._id),
       }),
     });
 

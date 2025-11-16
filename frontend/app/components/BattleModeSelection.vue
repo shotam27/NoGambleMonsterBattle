@@ -3,22 +3,24 @@
     class="min-h-screen bg-gradient-to-b from-blue-50 to-purple-50 flex items-center justify-center p-4"
   >
     <div class="max-w-4xl w-full">
-      <h1 class="text-5xl font-bold text-center mb-12 text-gray-800">
+      <h1
+        class="text-3xl lg:text-5xl font-bold text-center mb-8 lg:mb-12 text-gray-800"
+      >
         バトルモード選択
       </h1>
 
-      <div class="grid md:grid-cols-2 gap-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-8">
         <!-- AI戦 -->
         <button
           @click="selectMode('ai')"
           class="group relative overflow-hidden rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105"
         >
           <div
-            class="bg-gradient-to-br from-green-400 to-green-600 p-8 h-64 flex flex-col items-center justify-center"
+            class="bg-gradient-to-br from-green-400 to-green-600 p-6 lg:p-8 h-48 lg:h-64 flex flex-col items-center justify-center"
           >
-            <div class="text-white mb-4">
+            <div class="text-white mb-3 lg:mb-4">
               <svg
-                class="w-24 h-24"
+                class="w-16 h-16 lg:w-24 lg:h-24"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -31,8 +33,10 @@
                 />
               </svg>
             </div>
-            <h2 class="text-3xl font-bold text-white mb-2">AI戦</h2>
-            <p class="text-white text-opacity-90 text-center">
+            <h2 class="text-2xl lg:text-3xl font-bold text-white mb-2">AI戦</h2>
+            <p
+              class="text-sm lg:text-base text-white text-opacity-90 text-center"
+            >
               コンピューターと対戦
             </p>
           </div>
@@ -44,11 +48,11 @@
           class="group relative overflow-hidden rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105"
         >
           <div
-            class="bg-gradient-to-br from-purple-400 to-purple-600 p-8 h-64 flex flex-col items-center justify-center"
+            class="bg-gradient-to-br from-purple-400 to-purple-600 p-6 lg:p-8 h-48 lg:h-64 flex flex-col items-center justify-center"
           >
-            <div class="text-white mb-4">
+            <div class="text-white mb-3 lg:mb-4">
               <svg
-                class="w-24 h-24"
+                class="w-16 h-16 lg:w-24 lg:h-24"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -61,8 +65,12 @@
                 />
               </svg>
             </div>
-            <h2 class="text-3xl font-bold text-white mb-2">対人戦</h2>
-            <p class="text-white text-opacity-90 text-center">
+            <h2 class="text-2xl lg:text-3xl font-bold text-white mb-2">
+              対人戦
+            </h2>
+            <p
+              class="text-sm lg:text-base text-white text-opacity-90 text-center"
+            >
               他のプレイヤーと対戦
             </p>
           </div>
@@ -70,10 +78,10 @@
       </div>
 
       <!-- 戻るボタン -->
-      <div class="mt-8 text-center">
+      <div class="mt-6 lg:mt-8 text-center">
         <button
           @click="goBack"
-          class="px-8 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+          class="w-full sm:w-auto px-6 lg:px-8 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors text-base lg:text-lg"
         >
           戻る
         </button>
