@@ -608,31 +608,39 @@ const startAIBattle = async () => {
     console.log("startAIBattle: Starting...");
     loading.value = true;
 
+    // ユーザーが選択したモンスターIDを取得（選択順序を保持）
+    const playerIds = route.query.playerIds.split(",");
+    console.log("startAIBattle: playerIds =", playerIds);
+
     // 全モンスターを取得
     const response = await fetch(`${apiBaseUrl}/monster`);
     const allMonsters = await response.json();
     console.log("startAIBattle: Fetched monsters, count =", allMonsters.length);
 
-    // ランダムにプレイヤーのモンスターを選択
-    const shuffledMonsters = [...allMonsters].sort(() => Math.random() - 0.5);
-    const playerMonsters = shuffledMonsters.slice(0, 3);
-    const opponentMonsters = shuffledMonsters.slice(3, 6);
+    // 対戦相手用にランダムで3体選択（プレイヤーの選択と重複しないように）
+    const availableOpponents = allMonsters.filter(
+      (m) => !playerIds.includes(m._id)
+    );
+    const shuffledOpponents = [...availableOpponents].sort(
+      () => Math.random() - 0.5
+    );
+    const opponentMonsters = shuffledOpponents.slice(0, 3);
 
     console.log(
-      "startAIBattle: Selected player monsters =",
-      playerMonsters.map((m) => m._id)
+      "startAIBattle: Player monster IDs (in selection order) =",
+      playerIds
     );
     console.log(
       "startAIBattle: Selected opponent monsters =",
       opponentMonsters.map((m) => m._id)
     );
 
-    // バトル作成
+    // バトル作成（playerIdsの順序がそのまま保持される = 最初に選択したモンスターが先頭）
     const battleResponse = await fetch(`${apiBaseUrl}/battle/start`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        playerMonsterIds: playerMonsters.map((m) => m._id),
+        playerMonsterIds: playerIds,
         opponentMonsterIds: opponentMonsters.map((m) => m._id),
       }),
     });
