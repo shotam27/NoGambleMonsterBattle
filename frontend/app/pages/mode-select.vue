@@ -617,13 +617,8 @@ const startAIBattle = async () => {
     const allMonsters = await response.json();
     console.log("startAIBattle: Fetched monsters, count =", allMonsters.length);
 
-    // 対戦相手用にランダムで3体選択（プレイヤーの選択と重複しないように）
-    const availableOpponents = allMonsters.filter(
-      (m) => !playerIds.includes(m._id)
-    );
-    const shuffledOpponents = [...availableOpponents].sort(
-      () => Math.random() - 0.5
-    );
+    // 対戦相手用にランダムで3体選択（プレイヤーの選択と重複してもOK）
+    const shuffledOpponents = [...allMonsters].sort(() => Math.random() - 0.5);
     const opponentMonsters = shuffledOpponents.slice(0, 3);
 
     console.log(

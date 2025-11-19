@@ -520,7 +520,9 @@ function processMoves(battle) {
         // Cannot use protect consecutively
         if (attackerMember.usedProtectLastTurn) {
           battleLog.push({
-            message: `${attackerMember.monsterId.name}のまもるは失敗した！`
+            message: `${attackerMember.monsterId.name}の${move.name}は失敗した！`,
+            attacker: name,
+            move: move.name
           });
           attackerMember.usedProtectLastTurn = false; // Reset after failed attempt
           continue;
@@ -561,7 +563,9 @@ function processMoves(battle) {
         // Cannot create substitute if already has one
         if (attackerMember.hasSubstitute) {
           battleLog.push({
-            message: `${attackerMember.monsterId.name}にはすでに分身がいる！`
+            message: `${attackerMember.monsterId.name}の${move.name}は失敗した！（すでに分身がいる）`,
+            attacker: name,
+            move: move.name
           });
           continue;
         }
@@ -570,7 +574,9 @@ function processMoves(battle) {
         const substituteCost = Math.floor(attackerMember.maxHp / 4);
         if (attackerMember.currentHp <= substituteCost) {
           battleLog.push({
-            message: `${attackerMember.monsterId.name}のHPが足りない！`
+            message: `${attackerMember.monsterId.name}の${move.name}は失敗した！（HPが足りない）`,
+            attacker: name,
+            move: move.name
           });
           continue;
         }
@@ -595,7 +601,9 @@ function processMoves(battle) {
         // Cannot inject if already injected
         if (defenderMember.hasInjection) {
           battleLog.push({
-            message: `${defenderMember.monsterId.name}にはすでに注射されている！`
+            message: `${attackerMember.monsterId.name}の${move.name}は失敗した！（すでに効果がかかっている）`,
+            attacker: name,
+            move: move.name
           });
           continue;
         }

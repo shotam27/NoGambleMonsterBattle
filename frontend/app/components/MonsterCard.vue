@@ -51,8 +51,9 @@
         <li
           v-for="move in monster.moves"
           :key="move.id"
-          class="p-1 rounded"
+          class="p-1 rounded cursor-pointer hover:opacity-80 transition-opacity"
           :style="getMoveStyle(move)"
+          @click.stop="showMoveDetail(move)"
         >
           <div class="font-medium text-xs">{{ move.name }}</div>
           <div class="text-xs opacity-90">
@@ -62,11 +63,52 @@
         </li>
       </ul>
     </div>
+
+    <!-- Move Detail Modal -->
+    <div
+      v-if="selectedMove"
+      class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+      @click="closeModal"
+    >
+      <div class="bg-gray-800 rounded-lg p-6 max-w-md w-full" @click.stop>
+        <h3 class="text-xl font-bold mb-4">{{ selectedMove.name }}</h3>
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between">
+            <span class="text-gray-400">威力:</span>
+            <span class="font-bold">{{ selectedMove.power }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-400">タイプ:</span>
+            <span class="font-bold">{{
+              getMoveTypeLabel(selectedMove.type)
+            }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-400">カテゴリー:</span>
+            <span class="font-bold">{{
+              getMoveCategoryLabel(selectedMove.category)
+            }}</span>
+          </div>
+          <div
+            v-if="selectedMove.description"
+            class="mt-4 pt-4 border-t border-gray-600"
+          >
+            <p class="text-gray-300">{{ selectedMove.description }}</p>
+          </div>
+        </div>
+        <button
+          @click="closeModal"
+          class="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors"
+        >
+          閉じる
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 const props = defineProps({
   monster: {
@@ -80,6 +122,16 @@ const props = defineProps({
 });
 
 defineEmits(["select"]);
+
+const selectedMove = ref(null);
+
+const showMoveDetail = (move) => {
+  selectedMove.value = move;
+};
+
+const closeModal = () => {
+  selectedMove.value = null;
+};
 
 const typeColors = {
   fire: "#ef4444", // red-500

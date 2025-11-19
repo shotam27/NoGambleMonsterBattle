@@ -14,16 +14,14 @@
         <div class="text-xs mt-1 opacity-80">
           {{ categoryLabel }}
         </div>
+        <div
+          v-if="move.description"
+          class="text-xs mt-2 opacity-70 text-gray-200"
+        >
+          {{ move.description }}
+        </div>
       </div>
     </button>
-
-    <!-- Description Tooltip -->
-    <div
-      v-if="move.description"
-      class="absolute left-0 bottom-full mb-2 bg-gray-900 border-2 border-blue-500 rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none min-w-max max-w-xs hidden lg:block"
-    >
-      <p class="text-sm text-gray-100">{{ move.description }}</p>
-    </div>
   </div>
 </template>
 
