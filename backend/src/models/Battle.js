@@ -46,6 +46,10 @@ const partyMemberSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  isProtecting: {
+    type: Boolean,
+    default: false
+  },
   usedProtectLastTurn: {
     type: Boolean,
     default: false

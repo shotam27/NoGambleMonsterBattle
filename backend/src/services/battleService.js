@@ -136,6 +136,12 @@ function processSwitches(battle) {
           switchedOutMember.hasInjection = false;
         }
         
+        // Clear protect flags when switching out
+        switchedOutMember.usedProtectLastTurn = false;
+        if (switchedOutMember.isProtecting) {
+          switchedOutMember.isProtecting = false;
+        }
+        
         side.data.activeIndex = newIndex;
         
         // Reset stat modifiers when switching in
@@ -153,7 +159,7 @@ function processSwitches(battle) {
         // Clear pendingSwitchAfterAttack flag if this was a switch-after-attack
         if (side.name === 'player') {
           battle.pendingSwitchAfterAttack.player = false;
-        } else {
+        } else if (side.name === 'opponent') {
           battle.pendingSwitchAfterAttack.opponent = false;
         }
         
@@ -301,6 +307,18 @@ function processFainting(battle) {
     playerActive.isFainted = true;
     results.playerFainted = true;
     
+    // Clear all temporary battle effects when fainting
+    playerActive.hasInjection = false;
+    playerActive.hasSubstitute = false;
+    playerActive.substituteHp = 0;
+    playerActive.usedProtectLastTurn = false;
+    if (playerActive.isProtecting) {
+      playerActive.isProtecting = false;
+    }
+    
+    // Clear pendingSwitchAfterAttack flag (fainting takes priority)
+    battle.pendingSwitchAfterAttack.player = false;
+    
     // Check if all player monsters fainted
     const allPlayerFainted = battle.player.party.every(m => m.isFainted);
     if (allPlayerFainted) {
@@ -331,6 +349,18 @@ function processFainting(battle) {
       currentHp: opponentActive.currentHp
     });
     
+    // Clear all temporary battle effects when fainting
+    opponentActive.hasInjection = false;
+    opponentActive.hasSubstitute = false;
+    opponentActive.substituteHp = 0;
+    opponentActive.usedProtectLastTurn = false;
+    if (opponentActive.isProtecting) {
+      opponentActive.isProtecting = false;
+    }
+    
+    // Clear pendingSwitchAfterAttack flag (fainting takes priority)
+    battle.pendingSwitchAfterAttack.opponent = false;
+    
     // Check if all opponent monsters fainted
     const allOpponentFainted = battle.opponent.party.every(m => m.isFainted);
     if (allOpponentFainted) {
@@ -356,6 +386,20 @@ function processFainting(battle) {
       // AI auto-switch to next available monster
       const nextIndex = battle.opponent.party.findIndex(m => !m.isFainted);
       if (nextIndex !== -1) {
+        // Clear effects on switched-out monster
+        const switchedOutMember = battle.opponent.party[battle.opponent.activeIndex];
+        if (switchedOutMember.hasSubstitute) {
+          switchedOutMember.hasSubstitute = false;
+          switchedOutMember.substituteHp = 0;
+        }
+        if (switchedOutMember.hasInjection) {
+          switchedOutMember.hasInjection = false;
+        }
+        switchedOutMember.usedProtectLastTurn = false;
+        if (switchedOutMember.isProtecting) {
+          switchedOutMember.isProtecting = false;
+        }
+        
         battle.opponent.activeIndex = nextIndex;
         results.requiresOpponentSwitch = false; // AI already switched
         console.log('AI auto-switched to index:', nextIndex);
@@ -403,6 +447,18 @@ function processMoves(battle) {
     const battleLog = [];
     
     console.log('Processing moves...');
+    
+    // Clear isProtecting flag for all monsters at the start of turn
+    battle.player.party.forEach(member => {
+      if (member.isProtecting) {
+        member.isProtecting = false;
+      }
+    });
+    battle.opponent.party.forEach(member => {
+      if (member.isProtecting) {
+        member.isProtecting = false;
+      }
+    });
     
     // Determine which sides are using moves
     const moveSides = [];
@@ -947,8 +1003,8 @@ async function executeTurn(battle) {
       battleLog.push(...statusLog);
     }
     
-    // Check if any side has pending switch after attack
-    if (battle.status !== 'waiting_for_switch' && battle.status !== 'finished') {
+    // Check if any side has pending switch after attack (only if no fainting occurred)
+    if (battle.status === 'active') {
       if (battle.pendingSwitchAfterAttack.player || battle.pendingSwitchAfterAttack.opponent) {
         battle.status = 'waiting_for_switch';
         console.log('Battle requires switch after attack:', {
