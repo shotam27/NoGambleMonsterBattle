@@ -36,7 +36,10 @@
 
 <script setup>
 import { computed } from "vue";
-import { calculateTypeEffectiveness, getEffectivenessSymbol } from "~/utils/typeEffectiveness";
+import {
+  calculateTypeEffectiveness,
+  getEffectivenessSymbol,
+} from "~/utils/typeEffectiveness";
 
 const props = defineProps({
   move: {
@@ -96,9 +99,9 @@ const effectivenessSymbol = computed(() => {
 });
 
 const effectivenessClass = computed(() => {
-  if (effectiveness.value === null) return '';
-  if (effectiveness.value >= 2.0) return 'text-green-300'; // Super effective
-  if (effectiveness.value <= 0.5) return 'text-red-300'; // Not very effective
-  return 'text-yellow-300'; // Normal effectiveness
+  if (effectiveness.value === null) return "";
+  if (effectiveness.value >= 2.0) return "text-green-300"; // Super effective
+  if (effectiveness.value <= 0.5) return "text-red-300"; // Not very effective
+  return "text-yellow-300"; // Normal effectiveness
 });
 </script>
