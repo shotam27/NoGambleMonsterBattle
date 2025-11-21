@@ -1121,8 +1121,8 @@ async function selectAction(battle, playerSide, action) {
  * AI selects an action for opponent
  */
 async function selectAIAction(battle) {
-  // Check if AI needs to switch after attack
-  if (battle.status === 'waiting_for_switch' && battle.pendingSwitchAfterAttack.opponent) {
+  // Check if AI needs to switch after attack (check pendingSwitchAfterAttack flag regardless of status)
+  if (battle.pendingSwitchAfterAttack?.opponent) {
     // Find first non-fainted monster that isn't currently active
     const availableIndices = battle.opponent.party
       .map((member, idx) => ({ idx, member }))

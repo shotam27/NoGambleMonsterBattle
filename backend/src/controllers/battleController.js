@@ -151,11 +151,120 @@ exports.selectAction = async (req, res) => {
       console.log('After turn - Player statModifiers:', battleObj.player.party[0].statModifiers);
 
       // If someone needs to switch after attack, handle it
-      if (turnResult.battle.status === 'waiting_for_switch') {
+      // Check both 'waiting_for_switch' and if pendingSwitchAfterAttack is set
+      const needsSwitchAfterAttack = turnResult.requiresSwitch?.player || turnResult.requiresSwitch?.opponent;
+      
+      // If no switch needed and AI doesn't have next action, make it select
+      if (!needsSwitchAfterAttack && !turnResult.battle.opponent.selectedAction?.type) {
+        await battleService.selectAIAction(turnResult.battle);
+        console.log('AI selected action for next turn (normal case)');
+        
+        // Re-populate after AI selection
+        await turnResult.battle.populate([
+          { path: 'player.party.monsterId', populate: { path: 'moves' } },
+          { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+        ]);
+      }
+      
+      if (needsSwitchAfterAttack) {
+        console.log('Detected switch after attack needed:', turnResult.requiresSwitch);
+        
         // If opponent (AI) needs to switch, auto-select for AI
         if (turnResult.requiresSwitch?.opponent) {
+          // First, let AI select switch action (while pendingSwitchAfterAttack is still true)
           await battleService.selectAIAction(turnResult.battle);
           console.log('AI auto-selected switch after attack move');
+          
+          // Then clear the pending switch for opponent and reset status to active
+          turnResult.battle.pendingSwitchAfterAttack.opponent = false;
+          turnResult.battle.status = 'active';
+          await turnResult.battle.save();
+          
+          // Re-populate after AI selection
+          await turnResult.battle.populate([
+            { path: 'player.party.monsterId', populate: { path: 'moves' } },
+            { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+          ]);
+          
+          // Check if both have now selected actions
+          const bothHaveActions = 
+            turnResult.battle.player.selectedAction?.type && 
+            turnResult.battle.opponent.selectedAction?.type;
+          
+          if (bothHaveActions) {
+            // Execute the switch turn immediately
+            const switchTurnResult = await battleService.executeTurn(turnResult.battle);
+            
+            // After executing switch, AI needs to select action for next turn
+            if (!switchTurnResult.battle.opponent.selectedAction?.type) {
+              await battleService.selectAIAction(switchTurnResult.battle);
+              console.log('AI selected action for next turn after switch');
+            }
+            
+            // Re-populate
+            await switchTurnResult.battle.populate([
+              { path: 'player.party.monsterId', populate: { path: 'moves' } },
+              { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+            ]);
+            
+            return res.status(200).json({
+              battle: switchTurnResult.battle.toObject(),
+              battleLog: [...turnResult.battleLog, ...switchTurnResult.battleLog],
+              requiresSwitch: switchTurnResult.requiresSwitch,
+              message: 'Turn and switch executed'
+            });
+          } else {
+            // AI selected switch, but player hasn't selected action yet
+            // For AI battles, execute the switch turn immediately (player doesn't need to select)
+            const isAIBattle = !turnResult.battle.player.userId && !turnResult.battle.opponent.userId;
+            
+            if (isAIBattle) {
+              // Execute the switch turn (only opponent switches, player does nothing)
+              const switchTurnResult = await battleService.executeTurn(turnResult.battle);
+              console.log('Executed switch turn in AI battle');
+              
+              // After switch completes, select next actions for both sides
+              if (!switchTurnResult.battle.opponent.selectedAction?.type) {
+                await battleService.selectAIAction(switchTurnResult.battle);
+                console.log('AI selected action for next turn after switch (AI battle)');
+              }
+              
+              if (!switchTurnResult.battle.player.selectedAction?.type) {
+                await battleService.selectAIAction(switchTurnResult.battle, 'player');
+                console.log('Player AI selected action for next turn after switch (AI battle)');
+              }
+              
+              // Re-populate
+              await switchTurnResult.battle.populate([
+                { path: 'player.party.monsterId', populate: { path: 'moves' } },
+                { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+              ]);
+              
+              return res.status(200).json({
+                battle: switchTurnResult.battle.toObject(),
+                battleLog: [...turnResult.battleLog, ...switchTurnResult.battleLog],
+                requiresSwitch: switchTurnResult.requiresSwitch,
+                message: 'Turn and switch executed (AI battle)'
+              });
+            }
+            
+            // PvP battle - wait for player to select their action
+            // Re-populate
+            await turnResult.battle.populate([
+              { path: 'player.party.monsterId', populate: { path: 'moves' } },
+              { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+            ]);
+            
+            console.log('AI selected switch, waiting for player action');
+            
+            // Return and wait for player to select their next action
+            return res.status(200).json({
+              battle: turnResult.battle.toObject(),
+              battleLog: turnResult.battleLog,
+              requiresSwitch: turnResult.requiresSwitch,
+              message: 'AI switched, waiting for player action'
+            });
+          }
         }
         
         // If player needs to switch, return and wait for player selection
@@ -172,25 +281,6 @@ exports.selectAction = async (req, res) => {
             battleLog: turnResult.battleLog,
             requiresSwitch: turnResult.requiresSwitch,
             message: 'Turn executed, switch required'
-          });
-        }
-        
-        // Check if both have now selected switch actions (AI already auto-selected)
-        if (turnResult.battle.player.selectedAction?.type && turnResult.battle.opponent.selectedAction?.type) {
-          // Execute the switch turn
-          const switchTurnResult = await battleService.executeTurn(turnResult.battle);
-          
-          // Re-populate
-          await switchTurnResult.battle.populate([
-            { path: 'player.party.monsterId', populate: { path: 'moves' } },
-            { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
-          ]);
-          
-          return res.status(200).json({
-            battle: switchTurnResult.battle.toObject(),
-            battleLog: [...turnResult.battleLog, ...switchTurnResult.battleLog],
-            requiresSwitch: switchTurnResult.requiresSwitch,
-            message: 'Turn and switch executed'
           });
         }
       }

@@ -13,10 +13,15 @@
 
         <!-- Active Monster -->
         <div
-          class="mb-3 lg:mb-4 p-3 lg:p-4 rounded-lg relative group border-4"
+          class="mb-3 lg:mb-4 p-3 lg:p-4 rounded-lg relative group border-4 overflow-hidden"
           :style="getMonsterBoxStyle(activePlayerMonster)"
         >
-          <div v-if="activePlayerMonster" class="mb-2">
+          <!-- Dark overlay for readability when background image is present -->
+          <div
+            v-if="activePlayerMonster?.id"
+            class="absolute inset-0 bg-black opacity-70 pointer-events-none"
+          ></div>
+          <div v-if="activePlayerMonster" class="mb-2 relative z-10">
             <p class="text-xl lg:text-2xl font-bold">
               {{ activePlayerMonster.name }}
             </p>
@@ -28,10 +33,11 @@
             v-if="playerParty[playerActiveIndex]"
             :current="playerParty[playerActiveIndex].currentHp"
             :max="playerParty[playerActiveIndex].maxHp"
+            class="relative z-10"
           />
           <div
             v-if="playerParty[playerActiveIndex]"
-            class="mt-2 text-xs lg:text-sm text-center"
+            class="mt-2 text-xs lg:text-sm text-center relative z-10"
           >
             {{ playerParty[playerActiveIndex].currentHp }} /
             {{ playerParty[playerActiveIndex].maxHp }} HP
@@ -64,7 +70,7 @@
           <!-- Stat Modifiers Display -->
           <div
             v-if="playerParty[playerActiveIndex]?.statModifiers"
-            class="mt-2 flex flex-wrap gap-1 justify-center"
+            class="mt-2 flex flex-wrap gap-1 justify-center relative z-10"
           >
             <span
               v-if="playerParty[playerActiveIndex].statModifiers.attack !== 0"
@@ -349,10 +355,15 @@
 
         <!-- Active Monster -->
         <div
-          class="mb-3 lg:mb-4 p-3 lg:p-4 rounded-lg relative group border-4"
+          class="mb-3 lg:mb-4 p-3 lg:p-4 rounded-lg relative group border-4 overflow-hidden"
           :style="getMonsterBoxStyle(activeOpponentMonster)"
         >
-          <div v-if="activeOpponentMonster" class="mb-2">
+          <!-- Dark overlay for readability when background image is present -->
+          <div
+            v-if="activeOpponentMonster?.id"
+            class="absolute inset-0 bg-black opacity-70 pointer-events-none"
+          ></div>
+          <div v-if="activeOpponentMonster" class="mb-2 relative z-10">
             <p class="text-xl lg:text-2xl font-bold">
               {{ activeOpponentMonster.name }}
             </p>
@@ -364,10 +375,11 @@
             v-if="opponentParty[opponentActiveIndex]"
             :current="opponentParty[opponentActiveIndex].currentHp"
             :max="opponentParty[opponentActiveIndex].maxHp"
+            class="relative z-10"
           />
           <div
             v-if="opponentParty[opponentActiveIndex]"
-            class="mt-2 text-sm text-center"
+            class="mt-2 text-sm text-center relative z-10"
           >
             {{ opponentParty[opponentActiveIndex].currentHp }} /
             {{ opponentParty[opponentActiveIndex].maxHp }} HP
@@ -400,7 +412,7 @@
           <!-- Stat Modifiers Display -->
           <div
             v-if="opponentParty[opponentActiveIndex]?.statModifiers"
-            class="mt-2 flex flex-wrap gap-1 justify-center"
+            class="mt-2 flex flex-wrap gap-1 justify-center relative z-10"
           >
             <span
               v-if="
@@ -830,23 +842,32 @@ const getMonsterBoxStyle = (monster) => {
   }
 
   const types = Array.isArray(monster.type) ? monster.type : [monster.type];
+  let style = {};
 
+  // Border and background color
   if (types.length === 1) {
     // 単一タイプ: 全体を同じ色で
     const color = typeColors[types[0]] || "#6b7280";
-    return {
-      backgroundColor: `${color}33`, // 20%透明度
-      borderColor: color,
-    };
+    style.backgroundColor = `${color}33`; // 20%透明度
+    style.borderColor = color;
   } else {
     // 複合タイプ: 左側に1タイプ目、右側に2タイプ目
     const color1 = typeColors[types[0]] || "#6b7280";
     const color2 = typeColors[types[1]] || "#6b7280";
-    return {
-      background: `linear-gradient(to right, ${color1}33 50%, ${color2}33 50%)`,
-      borderImage: `linear-gradient(to right, ${color1} 50%, ${color2} 50%) 1`,
-    };
+    style.background = `linear-gradient(to right, ${color1}33 50%, ${color2}33 50%)`;
+    style.borderImage = `linear-gradient(to right, ${color1} 50%, ${color2} 50%) 1`;
   }
+
+  // Background image if available
+  if (monster.id) {
+    const imageUrl = `/images/monsters/${monster.id}.png`;
+    style.backgroundImage = `url('${imageUrl}')`;
+    style.backgroundSize = "cover";
+    style.backgroundPosition = "0 30%";
+    style.backgroundRepeat = "no-repeat";
+  }
+
+  return style;
 };
 
 const getStatModifierText = (modifier) => {

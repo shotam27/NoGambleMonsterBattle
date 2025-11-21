@@ -2,10 +2,16 @@
   <div
     class="bg-gray-800 rounded-lg p-3 lg:p-4 cursor-pointer hover:bg-gray-700 transition-all border-4 relative overflow-hidden"
     :class="[{ 'ring-4 ring-yellow-400 transform scale-105': isSelected }]"
-    :style="borderStyle"
+    :style="cardStyle"
     @click="$emit('select')"
   >
-    <div class="text-center mb-2 lg:mb-3 relative">
+    <!-- Dark overlay for readability when background image is present -->
+    <div
+      v-if="monsterImageUrl"
+      class="absolute inset-0 bg-black opacity-70 pointer-events-none"
+    ></div>
+
+    <div class="text-center mb-2 lg:mb-3 relative z-10">
       <div
         v-if="isSelected"
         class="absolute -top-2 -right-2 bg-yellow-500 text-gray-900 rounded-full w-6 h-6 lg:w-7 lg:h-7 flex items-center justify-center font-bold z-10 text-sm lg:text-base"
@@ -18,7 +24,7 @@
       </p>
     </div>
 
-    <div class="space-y-0.5 lg:space-y-1 text-xs lg:text-sm">
+    <div class="space-y-0.5 lg:space-y-1 text-xs lg:text-sm relative z-10">
       <div class="flex justify-between">
         <span>HP:</span>
         <span class="font-bold">{{ monster.stats.hp }}</span>
@@ -45,7 +51,9 @@
       </div>
     </div>
 
-    <div class="mt-2 lg:mt-3 pt-2 lg:pt-3 border-t border-gray-600">
+    <div
+      class="mt-2 lg:mt-3 pt-2 lg:pt-3 border-t border-gray-600 relative z-10"
+    >
       <p class="text-xs font-semibold mb-1">技:</p>
       <ul class="text-xs space-y-0.5 lg:space-y-1">
         <li
@@ -167,23 +175,39 @@ const getMonsterTypes = computed(() => {
     : [props.monster.type];
 });
 
-const borderStyle = computed(() => {
-  const types = getMonsterTypes.value;
+const monsterImageUrl = computed(() => {
+  // Check if monster has an id and construct image path
+  if (props.monster.id) {
+    return `/images/monsters/${props.monster.id}.png`;
+  }
+  return null;
+});
 
+const cardStyle = computed(() => {
+  const types = getMonsterTypes.value;
+  const imageUrl = monsterImageUrl.value;
+
+  let style = {};
+
+  // Border style
   if (types.length === 1) {
-    // 単一タイプ: 全体を同じ色で
-    const color = typeColors[types[0]] || "#6b7280"; // gray-500
-    return {
-      borderColor: color,
-    };
+    const color = typeColors[types[0]] || "#6b7280";
+    style.borderColor = color;
   } else {
-    // 複合タイプ: 左側に1タイプ目、右側に2タイプ目
     const color1 = typeColors[types[0]] || "#6b7280";
     const color2 = typeColors[types[1]] || "#6b7280";
-    return {
-      borderImage: `linear-gradient(to right, ${color1} 50%, ${color2} 50%) 1`,
-    };
+    style.borderImage = `linear-gradient(to right, ${color1} 50%, ${color2} 50%) 1`;
   }
+
+  // Background image if available
+  if (imageUrl) {
+    style.backgroundImage = `url('${imageUrl}')`;
+    style.backgroundSize = "cover";
+    style.backgroundPosition = "center";
+    style.backgroundRepeat = "no-repeat";
+  }
+
+  return style;
 });
 
 const typeTextColor = computed(() => {
