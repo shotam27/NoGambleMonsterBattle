@@ -139,9 +139,11 @@ function sortBySpeed(battle) {
 
 /**
  * Process switch actions in speed order
+ * Adds ability activation messages directly to battle.battleLog
  */
 function processSwitches(battle) {
   const sortedSides = sortBySpeed(battle);
+  const abilityLog = [];
   
   for (const side of sortedSides) {
     const action = side.data.selectedAction;
@@ -191,10 +193,53 @@ function processSwitches(battle) {
           battle.pendingSwitchAfterAttack.opponent = false;
         }
         
-        // TODO: Trigger landing abilities if implemented
+        // Trigger ability activation when switching in
+        const switchedInMonster = switchedInMember.monsterId;
+        if (switchedInMonster && switchedInMonster.ability) {
+          const ability = switchedInMonster.ability;
+          const monsterName = switchedInMonster.name;
+          
+          if (ability.effectType === 'statChange') {
+            const statChange = ability.statChange;
+            const otherSide = side.name === 'player' ? battle.opponent : battle.player;
+            const targetMember = statChange.targetSide === 'self' ? switchedInMember : otherSide.party[otherSide.activeIndex];
+            
+            // Apply stat change
+            if (!targetMember.statModifiers) {
+              targetMember.statModifiers = { attack: 0, defense: 0, magicAttack: 0, magicDefense: 0, speed: 0 };
+            }
+            
+            const stat = statChange.stat;
+            const stages = statChange.stages;
+            targetMember.statModifiers[stat] = Math.max(-2, Math.min(2, (targetMember.statModifiers[stat] || 0) + stages));
+            
+            // Add to ability log
+            const targetName = statChange.targetSide === 'self' ? monsterName : (targetMember.monsterId?.name || '相手');
+            const statLabels = { attack: '攻撃', defense: '防御', magicAttack: '魔法攻撃', magicDefense: '魔法防御', speed: '素早さ' };
+            const stageLabel = stages > 0 ? `${stages}段階上がった` : `${Math.abs(stages)}段階下がった`;
+            abilityLog.push(`${monsterName}の${ability.name}が発動! ${targetName}の${statLabels[stat]}が${stageLabel}!`);
+          } else if (ability.effectType === 'heal') {
+            // Apply healing
+            const healAmount = Math.floor(switchedInMember.maxHp * ability.healPercentage / 100);
+            const previousHp = switchedInMember.currentHp;
+            switchedInMember.currentHp = Math.min(switchedInMember.maxHp, switchedInMember.currentHp + healAmount);
+            const actualHeal = switchedInMember.currentHp - previousHp;
+            
+            if (actualHeal > 0) {
+              abilityLog.push(`${monsterName}の${ability.name}が発動! HPを${actualHeal}回復した!`);
+            }
+          }
+        }
       }
     }
   }
+  
+  // Add ability logs to battle log
+  if (abilityLog.length > 0) {
+    battle.battleLog.push(...abilityLog);
+  }
+  
+  return abilityLog;
 }
 
 /**
@@ -219,6 +264,16 @@ function processDamage(battle, attacker, defender, move) {
     console.log('Defender is protecting, move blocked');
     defenderMember.isProtecting = false; // Reset protect flag after blocking
     return 0; // No damage or status effects applied
+  }
+  
+  // Check for type resistance ability
+  if (defenderMonster && defenderMonster.ability) {
+    const ability = defenderMonster.ability;
+    if (ability.effectType === 'typeResistance' && ability.typeResistance && ability.typeResistance.type === move.type) {
+      const multiplier = ability.typeResistance.multiplier;
+      console.log(`Ability ${ability.name} reduces damage from ${move.name} by multiplier ${multiplier}`);
+      return -1 - multiplier; // Special value: -1 for 0x, -1.25 for 0.25x, -1.5 for 0.5x
+    }
   }
   
   // Status moves don't deal damage but inflict status or stat changes
@@ -267,6 +322,14 @@ function processDamage(battle, attacker, defender, move) {
   } else {
     // Regular damage move
     damage = calculateDamage(attackerMonster, defenderMonster, move, attacker.party[attacker.activeIndex], defenderMember);
+    
+    // Apply type resistance ability multiplier if present
+    if (defenderMonster.ability && defenderMonster.ability.effectType === 'typeResistance' && 
+        defenderMonster.ability.typeResistance && defenderMonster.ability.typeResistance.type === move.type) {
+      const multiplier = defenderMonster.ability.typeResistance.multiplier;
+      damage = Math.floor(damage * multiplier);
+      console.log(`Applied type resistance multiplier ${multiplier}, final damage: ${damage}`);
+    }
     
     // Check if defender has substitute
     if (defenderMember.hasSubstitute) {
@@ -755,6 +818,25 @@ function processMoves(battle) {
       // Process damage or status effect
       const damage = processDamage(battle, side, opponent, move);
       
+      // Check if move was affected by ability (type resistance)
+      if (damage < -1) {
+        const defenderAbility = defenderMember.monsterId.ability;
+        const multiplier = -(damage + 1); // Extract multiplier from special value
+        if (multiplier === 0) {
+          battleLog.push({
+            message: `${defenderMember.monsterId.name}の${defenderAbility.name}で${move.name}を無効化した！`
+          });
+        } else {
+          battleLog.push({
+            message: `${defenderMember.monsterId.name}の${defenderAbility.name}で${move.name}のダメージを軽減！`
+          });
+        }
+        if (multiplier === 0) {
+          continue; // Skip all subsequent effects if completely blocked
+        }
+        // Continue with reduced damage (will be calculated in processDamage)
+      }
+      
       // Check if move was blocked by protect
       if (wasProtecting && damage === 0) {
         battleLog.push({
@@ -1064,7 +1146,8 @@ async function executeTurn(battle) {
     });
     
     // Phase 1: Process switches (in speed order)
-    processSwitches(battle);
+    const switchAbilityLog = processSwitches(battle);
+    battleLog.push(...switchAbilityLog);
     
     // After processing switches, check if waiting_for_switch should be cleared
     if (battle.status === 'waiting_for_switch') {

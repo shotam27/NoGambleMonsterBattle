@@ -50,7 +50,11 @@ const monsterSchema = new mongoose.Schema({
   moves: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Move'
-  }]
+  }],
+  ability: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Ability'
+  }
 }, {
   timestamps: true
 });

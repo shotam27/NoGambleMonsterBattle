@@ -77,9 +77,78 @@ exports.startBattle = async (req, res) => {
 
     // Populate for response
     await battle.populate([
-      { path: 'player.party.monsterId', populate: { path: 'moves' } },
-      { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+      { path: 'player.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] },
+      { path: 'opponent.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] }
     ]);
+
+    // Activate abilities for both active monsters at battle start
+    const initialAbilityLog = [];
+    const playerMonster = battle.player.party[battle.player.activeIndex].monsterId;
+    const opponentMonster = battle.opponent.party[battle.opponent.activeIndex].monsterId;
+    
+    // Process player's ability
+    if (playerMonster && playerMonster.ability) {
+      const ability = playerMonster.ability;
+      const activeMember = battle.player.party[battle.player.activeIndex];
+      
+      if (ability.effectType === 'statChange') {
+        const statChange = ability.statChange;
+        const targetMember = statChange.targetSide === 'self' ? activeMember : battle.opponent.party[battle.opponent.activeIndex];
+        
+        const stat = statChange.stat;
+        const stages = statChange.stages;
+        targetMember.statModifiers[stat] = Math.max(-2, Math.min(2, (targetMember.statModifiers[stat] || 0) + stages));
+        
+        const targetName = statChange.targetSide === 'self' ? playerMonster.name : opponentMonster.name;
+        const statLabels = { attack: '攻撃', defense: '防御', magicAttack: '魔法攻撃', magicDefense: '魔法防御', speed: '素早さ' };
+        const stageLabel = stages > 0 ? `${stages}段階上がった` : `${Math.abs(stages)}段階下がった`;
+        initialAbilityLog.push(`${playerMonster.name}の${ability.name}が発動! ${targetName}の${statLabels[stat]}が${stageLabel}!`);
+      } else if (ability.effectType === 'heal') {
+        const healAmount = Math.floor(activeMember.maxHp * ability.healPercentage / 100);
+        const previousHp = activeMember.currentHp;
+        activeMember.currentHp = Math.min(activeMember.maxHp, activeMember.currentHp + healAmount);
+        const actualHeal = activeMember.currentHp - previousHp;
+        
+        if (actualHeal > 0) {
+          initialAbilityLog.push(`${playerMonster.name}の${ability.name}が発動! HPを${actualHeal}回復した!`);
+        }
+      }
+    }
+    
+    // Process opponent's ability
+    if (opponentMonster && opponentMonster.ability) {
+      const ability = opponentMonster.ability;
+      const activeMember = battle.opponent.party[battle.opponent.activeIndex];
+      
+      if (ability.effectType === 'statChange') {
+        const statChange = ability.statChange;
+        const targetMember = statChange.targetSide === 'self' ? activeMember : battle.player.party[battle.player.activeIndex];
+        
+        const stat = statChange.stat;
+        const stages = statChange.stages;
+        targetMember.statModifiers[stat] = Math.max(-2, Math.min(2, (targetMember.statModifiers[stat] || 0) + stages));
+        
+        const targetName = statChange.targetSide === 'self' ? opponentMonster.name : playerMonster.name;
+        const statLabels = { attack: '攻撃', defense: '防御', magicAttack: '魔法攻撃', magicDefense: '魔法防御', speed: '素早さ' };
+        const stageLabel = stages > 0 ? `${stages}段階上がった` : `${Math.abs(stages)}段階下がった`;
+        initialAbilityLog.push(`${opponentMonster.name}の${ability.name}が発動! ${targetName}の${statLabels[stat]}が${stageLabel}!`);
+      } else if (ability.effectType === 'heal') {
+        const healAmount = Math.floor(activeMember.maxHp * ability.healPercentage / 100);
+        const previousHp = activeMember.currentHp;
+        activeMember.currentHp = Math.min(activeMember.maxHp, activeMember.currentHp + healAmount);
+        const actualHeal = activeMember.currentHp - previousHp;
+        
+        if (actualHeal > 0) {
+          initialAbilityLog.push(`${opponentMonster.name}の${ability.name}が発動! HPを${actualHeal}回復した!`);
+        }
+      }
+    }
+    
+    // Add ability activation logs to battle log and save
+    if (initialAbilityLog.length > 0) {
+      battle.battleLog.push(...initialAbilityLog);
+      await battle.save();
+    }
 
     const battleObj = battle.toObject();
     console.log('Sending battle data:', JSON.stringify({
@@ -103,8 +172,8 @@ exports.selectAction = async (req, res) => {
     const { actionType, moveId, switchToIndex } = req.body;
 
     const battle = await Battle.findById(battleId).populate([
-      { path: 'player.party.monsterId', populate: { path: 'moves' } },
-      { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+      { path: 'player.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] },
+      { path: 'opponent.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] }
     ]);
     
     if (!battle) {
@@ -144,8 +213,8 @@ exports.selectAction = async (req, res) => {
       
       // Re-populate after save
       await turnResult.battle.populate([
-        { path: 'player.party.monsterId', populate: { path: 'moves' } },
-        { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+        { path: 'player.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] },
+        { path: 'opponent.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] }
       ]);
 
       const battleObj = turnResult.battle.toObject();
@@ -162,8 +231,8 @@ exports.selectAction = async (req, res) => {
         
         // Re-populate after AI selection
         await turnResult.battle.populate([
-          { path: 'player.party.monsterId', populate: { path: 'moves' } },
-          { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+          { path: 'player.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] },
+          { path: 'opponent.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] }
         ]);
       }
       
@@ -183,8 +252,8 @@ exports.selectAction = async (req, res) => {
           
           // Re-populate after AI selection
           await turnResult.battle.populate([
-            { path: 'player.party.monsterId', populate: { path: 'moves' } },
-            { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+            { path: 'player.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] },
+            { path: 'opponent.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] }
           ]);
           
           // Check if both have now selected actions
@@ -204,8 +273,8 @@ exports.selectAction = async (req, res) => {
             
             // Re-populate
             await switchTurnResult.battle.populate([
-              { path: 'player.party.monsterId', populate: { path: 'moves' } },
-              { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+              { path: 'player.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] },
+              { path: 'opponent.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] }
             ]);
             
             return res.status(200).json({
@@ -239,8 +308,8 @@ exports.selectAction = async (req, res) => {
               
               // Re-populate
               await switchTurnResult.battle.populate([
-                { path: 'player.party.monsterId', populate: { path: 'moves' } },
-                { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+                { path: 'player.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] },
+                { path: 'opponent.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] }
               ]);
               
               return res.status(200).json({
@@ -256,8 +325,8 @@ exports.selectAction = async (req, res) => {
             // PvP battle - wait for player to select their action
             // Re-populate
             await turnResult.battle.populate([
-              { path: 'player.party.monsterId', populate: { path: 'moves' } },
-              { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+              { path: 'player.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] },
+              { path: 'opponent.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] }
             ]);
             
             console.log('AI selected switch, waiting for player action');
@@ -279,8 +348,8 @@ exports.selectAction = async (req, res) => {
           console.log('Player needs to select switch after attack move');
           // Don't auto-execute turn yet, wait for player to select switch
           await turnResult.battle.populate([
-            { path: 'player.party.monsterId', populate: { path: 'moves' } },
-            { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+            { path: 'player.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] },
+            { path: 'opponent.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] }
           ]);
           
           return res.status(200).json({
@@ -319,8 +388,8 @@ exports.selectAction = async (req, res) => {
 exports.getBattleStatus = async (req, res) => {
   try {
     const battle = await Battle.findById(req.params.battleId).populate([
-      { path: 'player.party.monsterId', populate: { path: 'moves' } },
-      { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+      { path: 'player.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] },
+      { path: 'opponent.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] }
     ]);
     
     if (!battle) {
@@ -383,8 +452,8 @@ exports.switchMonster = async (req, res) => {
 
     // Populate for response
     await battle.populate([
-      { path: 'player.party.monsterId', populate: { path: 'moves' } },
-      { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+      { path: 'player.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] },
+      { path: 'opponent.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] }
     ]);
 
     res.status(200).json({
@@ -421,8 +490,8 @@ exports.regenerateOpponentParty = async (req, res) => {
 
     // Populate for response
     await battle.populate([
-      { path: 'player.party.monsterId', populate: { path: 'moves' } },
-      { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+      { path: 'player.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] },
+      { path: 'opponent.party.monsterId', populate: [{ path: 'moves' }, { path: 'ability' }] }
     ]);
 
     res.status(200).json({

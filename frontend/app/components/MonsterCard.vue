@@ -54,6 +54,18 @@
     <div
       class="mt-2 lg:mt-3 pt-2 lg:pt-3 border-t border-gray-600 relative z-10"
     >
+      <div
+        v-if="monster.ability"
+        class="mb-2 lg:mb-3 p-2 bg-purple-900 bg-opacity-50 rounded"
+      >
+        <p class="text-xs font-semibold text-purple-300">
+          特性: {{ monster.ability.name }}
+        </p>
+        <p class="text-xs text-gray-300 mt-1">
+          {{ monster.ability.description }}
+        </p>
+      </div>
+
       <p class="text-xs font-semibold mb-1">技:</p>
       <ul class="text-xs space-y-0.5 lg:space-y-1">
         <li

@@ -73,6 +73,15 @@
                 }}<span v-if="idx < monster.moves.length - 1">, </span>
               </span>
             </div>
+
+            <div v-if="monster.ability" class="ability-info">
+              <strong>特性:</strong>
+              {{
+                typeof monster.ability === "string"
+                  ? monster.ability
+                  : monster.ability.name
+              }}
+            </div>
           </div>
         </div>
       </div>
@@ -212,6 +221,20 @@
             </div>
           </div>
 
+          <div class="form-group">
+            <label>特性選択:</label>
+            <select v-model="editingMonster.ability">
+              <option value="">-- 特性を選択 --</option>
+              <option
+                v-for="ability in availableAbilities"
+                :key="ability._id"
+                :value="ability._id"
+              >
+                {{ ability.name }} - {{ ability.description }}
+              </option>
+            </select>
+          </div>
+
           <div class="modal-actions">
             <button type="submit" class="btn-primary">
               {{ isAddMode ? "追加" : "更新" }}
@@ -237,6 +260,7 @@ const emit = defineEmits(["message"]);
 
 const monsters = ref([]);
 const availableMoves = ref([]);
+const availableAbilities = ref([]);
 const searchQuery = ref("");
 const editingMonster = ref(null);
 const isAddMode = ref(false);
@@ -272,6 +296,17 @@ const fetchMoves = async () => {
   }
 };
 
+const fetchAbilities = async () => {
+  try {
+    const response = await fetch(`${apiBaseUrl}/ability`);
+    if (response.ok) {
+      availableAbilities.value = await response.json();
+    }
+  } catch (error) {
+    console.error("Error fetching abilities:", error);
+  }
+};
+
 const openAddModal = () => {
   isAddMode.value = true;
   editingMonster.value = {
@@ -288,6 +323,7 @@ const openAddModal = () => {
       speed: 50,
     },
     moves: ["", "", "", ""],
+    ability: "",
   };
 };
 
@@ -310,6 +346,12 @@ const editMonster = (monster) => {
     moveIds[3] || "",
   ];
 
+  // abilityのIDを取得
+  monsterCopy.ability =
+    typeof monsterCopy.ability === "string"
+      ? monsterCopy.ability
+      : monsterCopy.ability?._id || "";
+
   editingMonster.value = monsterCopy;
 };
 
@@ -327,6 +369,7 @@ const saveMonster = async () => {
       type: typeArray,
       stats: editingMonster.value.stats,
       moves: editingMonster.value.moves.filter((m) => m !== ""),
+      ability: editingMonster.value.ability || undefined,
     };
 
     const url = isAddMode.value
@@ -400,6 +443,7 @@ const cancelEdit = () => {
 onMounted(() => {
   fetchMonsters();
   fetchMoves();
+  fetchAbilities();
 });
 </script>
 

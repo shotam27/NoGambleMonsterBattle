@@ -3,7 +3,7 @@ const Monster = require('../models/Monster');
 // Get all monsters
 exports.getAllMonsters = async (req, res) => {
   try {
-    const monsters = await Monster.find().populate('moves');
+    const monsters = await Monster.find().populate('moves').populate('ability');
     res.status(200).json(monsters);
   } catch (error) {
     res.status(500).json({ error: true, message: error.message });
@@ -13,7 +13,7 @@ exports.getAllMonsters = async (req, res) => {
 // Get monster by ID
 exports.getMonsterById = async (req, res) => {
   try {
-    const monster = await Monster.findById(req.params.id).populate('moves');
+    const monster = await Monster.findById(req.params.id).populate('moves').populate('ability');
     if (!monster) {
       return res.status(404).json({ error: true, message: 'Monster not found' });
     }
@@ -28,7 +28,7 @@ exports.createMonster = async (req, res) => {
   try {
     const monster = new Monster(req.body);
     await monster.save();
-    const populated = await Monster.findById(monster._id).populate('moves');
+    const populated = await Monster.findById(monster._id).populate('moves').populate('ability');
     res.status(201).json(populated);
   } catch (error) {
     res.status(400).json({ error: true, message: error.message });
@@ -42,7 +42,7 @@ exports.updateMonster = async (req, res) => {
       req.params.id,
       req.body,
       { new: true, runValidators: true }
-    ).populate('moves');
+    ).populate('moves').populate('ability');
     
     if (!monster) {
       return res.status(404).json({ error: true, message: 'Monster not found' });

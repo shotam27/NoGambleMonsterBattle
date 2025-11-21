@@ -297,6 +297,7 @@
               index === playerActiveIndex ? 'bg-yellow-600' : 'bg-gray-700',
               member.isFainted ? 'opacity-50' : '',
             ]"
+            @click="openMonsterDetail(member.monsterId)"
           >
             <div class="font-bold truncate">
               {{ member.monsterId?.name || "モンスター" }}
@@ -655,6 +656,7 @@
               index === opponentActiveIndex ? 'bg-yellow-600' : 'bg-gray-700',
               member.isFainted ? 'opacity-50' : '',
             ]"
+            @click="openMonsterDetail(member.monsterId)"
           >
             <div class="font-bold truncate">
               {{ member.monsterId?.name || "モンスター" }}
@@ -755,11 +757,124 @@
     <div v-else class="bg-gray-800 rounded-lg p-4 lg:p-6 text-center">
       <p class="text-lg lg:text-xl">相手のターン...</p>
     </div>
+
+    <!-- Monster Detail Modal -->
+    <div
+      v-if="selectedMonster"
+      class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+      @click="closeMonsterDetail"
+    >
+      <div
+        class="bg-gray-800 rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto"
+        @click.stop
+      >
+        <div
+          class="text-center mb-4 p-4 rounded-lg border-4 relative overflow-hidden"
+          :style="getMonsterCardStyle(selectedMonster)"
+        >
+          <!-- Dark overlay for readability -->
+          <div
+            v-if="selectedMonster.id"
+            class="absolute inset-0 bg-black opacity-70 pointer-events-none"
+          ></div>
+
+          <div class="relative z-10">
+            <h3 class="text-2xl font-bold mb-2">{{ selectedMonster.name }}</h3>
+            <p
+              class="text-sm uppercase tracking-wide"
+              :class="getTypeTextColor(selectedMonster.type)"
+            >
+              {{ typeLabel(selectedMonster.type) }}
+            </p>
+          </div>
+        </div>
+
+        <div class="space-y-3 text-sm">
+          <div class="bg-gray-700 rounded p-3">
+            <h4 class="font-bold mb-2 text-yellow-400">ステータス</h4>
+            <div class="space-y-1">
+              <div class="flex justify-between">
+                <span class="text-gray-400">HP:</span>
+                <span class="font-bold">{{ selectedMonster.stats.hp }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">攻撃:</span>
+                <span class="font-bold">{{
+                  selectedMonster.stats.attack
+                }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">防御:</span>
+                <span class="font-bold">{{
+                  selectedMonster.stats.defense
+                }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">特攻:</span>
+                <span class="font-bold">{{
+                  selectedMonster.stats.magicAttack
+                }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">特防:</span>
+                <span class="font-bold">{{
+                  selectedMonster.stats.magicDefense
+                }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">素早さ:</span>
+                <span class="font-bold">{{ selectedMonster.stats.speed }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div
+            v-if="selectedMonster.ability"
+            class="bg-purple-900 bg-opacity-50 rounded p-3"
+          >
+            <h4 class="font-bold mb-1 text-purple-300">
+              特性: {{ selectedMonster.ability.name }}
+            </h4>
+            <p class="text-gray-300 text-xs">
+              {{ selectedMonster.ability.description }}
+            </p>
+          </div>
+
+          <div class="bg-gray-700 rounded p-3">
+            <h4 class="font-bold mb-2 text-blue-400">技</h4>
+            <ul class="space-y-2">
+              <li
+                v-for="move in selectedMonster.moves"
+                :key="move.id"
+                class="p-2 rounded"
+                :style="getMoveStyleForModal(move)"
+              >
+                <div class="font-medium">{{ move.name }}</div>
+                <div class="text-xs opacity-90 mt-1">
+                  威力: {{ move.power }} | {{ typeLabel(move.type) }} |
+                  {{ getMoveCategoryLabel(move.category) }}
+                </div>
+                <div v-if="move.description" class="text-xs text-gray-300 mt-1">
+                  {{ move.description }}
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <button
+          @click="closeMonsterDetail"
+          class="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors"
+        >
+          閉じる
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 const props = defineProps({
   playerParty: {
@@ -920,5 +1035,76 @@ const formatBattleLog = (log) => {
   );
 
   return formatted;
+};
+
+// Monster detail modal
+const selectedMonster = ref(null);
+
+const openMonsterDetail = (monster) => {
+  if (monster) {
+    selectedMonster.value = monster;
+  }
+};
+
+const closeMonsterDetail = () => {
+  selectedMonster.value = null;
+};
+
+const getMonsterCardStyle = (monster) => {
+  if (!monster || !monster.type) {
+    return { backgroundColor: "#1e3a8a" };
+  }
+
+  const types = Array.isArray(monster.type) ? monster.type : [monster.type];
+  let style = {};
+
+  if (types.length === 1) {
+    const color = typeColors[types[0]] || "#6b7280";
+    style.borderColor = color;
+  } else {
+    const color1 = typeColors[types[0]] || "#6b7280";
+    const color2 = typeColors[types[1]] || "#6b7280";
+    style.borderImage = `linear-gradient(to right, ${color1} 50%, ${color2} 50%) 1`;
+  }
+
+  if (monster.id) {
+    style.backgroundImage = `url('/images/monsters/${monster.id}.png')`;
+    style.backgroundSize = "cover";
+    style.backgroundPosition = "center";
+    style.backgroundRepeat = "no-repeat";
+  }
+
+  return style;
+};
+
+const getTypeTextColor = (types) => {
+  const typeTextColors = {
+    fire: "text-red-400",
+    water: "text-blue-400",
+    grass: "text-green-400",
+    normal: "text-white",
+    light: "text-yellow-400",
+    dark: "text-purple-400",
+  };
+
+  const typeArray = Array.isArray(types) ? types : [types];
+  const firstType = typeArray[0];
+  return typeTextColors[firstType] || "text-gray-400";
+};
+
+const getMoveStyleForModal = (move) => {
+  const color = typeColors[move.type] || "#6b7280";
+  return {
+    backgroundColor: `${color}33`,
+    borderLeft: `4px solid ${color}`,
+  };
+};
+
+const getMoveCategoryLabel = (category) => {
+  const categoryLabels = {
+    physical: "物理",
+    magical: "魔法",
+  };
+  return categoryLabels[category] || "物理";
 };
 </script>

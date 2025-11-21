@@ -15,6 +15,12 @@
       >
         技管理
       </button>
+      <button
+        :class="{ active: activeTab === 'abilities' }"
+        @click="activeTab = 'abilities'"
+      >
+        特性管理
+      </button>
     </div>
 
     <div class="tab-content">
@@ -23,6 +29,10 @@
         @message="showMessage"
       />
       <MoveManagement v-if="activeTab === 'moves'" @message="showMessage" />
+      <AbilityManagement
+        v-if="activeTab === 'abilities'"
+        @message="showMessage"
+      />
     </div>
 
     <div v-if="message" :class="['message', messageType]">
@@ -35,6 +45,7 @@
 import { ref } from "vue";
 import MonsterManagement from "~/components/admin/MonsterManagement.vue";
 import MoveManagement from "~/components/admin/MoveManagement.vue";
+import AbilityManagement from "~/components/admin/AbilityManagement.vue";
 
 const activeTab = ref("monsters");
 const message = ref("");

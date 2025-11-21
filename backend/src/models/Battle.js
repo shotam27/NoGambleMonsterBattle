@@ -130,6 +130,10 @@ const battleSchema = new mongoose.Schema({
   pendingSwitchAfterAttack: {
     player: { type: Boolean, default: false },
     opponent: { type: Boolean, default: false }
+  },
+  battleLog: {
+    type: [String],
+    default: []
   }
 }, {
   timestamps: true,

@@ -95,15 +95,18 @@ connectDB();
 require('./src/models/Move');
 require('./src/models/Monster');
 require('./src/models/Battle');
+require('./src/models/Ability');
 
 // Routes
 const monsterRoutes = require('./src/routes/monster');
 const battleRoutes = require('./src/routes/battle');
 const moveRoutes = require('./src/routes/move');
+const abilityRoutes = require('./src/routes/ability');
 
 app.use('/api/monster', monsterRoutes);
 app.use('/api/battle', battleRoutes);
 app.use('/api/move', moveRoutes);
+app.use('/api/ability', abilityRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
