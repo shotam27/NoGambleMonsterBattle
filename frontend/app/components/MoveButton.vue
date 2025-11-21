@@ -6,7 +6,16 @@
       @click="$emit('click')"
     >
       <div class="text-left">
-        <p class="text-base lg:text-lg font-bold">{{ move.name }}</p>
+        <p class="text-base lg:text-lg font-bold">
+          {{ move.name }}
+          <span
+            v-if="move.power && opponentTypes && effectivenessSymbol"
+            class="ml-2 text-xl font-bold"
+            :class="effectivenessClass"
+          >
+            {{ effectivenessSymbol }}
+          </span>
+        </p>
         <div class="flex justify-between text-xs lg:text-sm mt-1">
           <span>威力: {{ move.power }}</span>
           <span class="uppercase">{{ typeLabel }}</span>
@@ -27,11 +36,16 @@
 
 <script setup>
 import { computed } from "vue";
+import { calculateTypeEffectiveness, getEffectivenessSymbol } from "~/utils/typeEffectiveness";
 
 const props = defineProps({
   move: {
     type: Object,
     required: true,
+  },
+  opponentTypes: {
+    type: [String, Array],
+    default: null,
   },
 });
 
@@ -69,4 +83,22 @@ const typeLabel = computed(
 const categoryLabel = computed(
   () => categoryLabels[props.move.category] || props.move.category || "物理"
 );
+
+// Calculate type effectiveness
+const effectiveness = computed(() => {
+  if (!props.move.power || !props.opponentTypes) return null;
+  return calculateTypeEffectiveness(props.move.type, props.opponentTypes);
+});
+
+const effectivenessSymbol = computed(() => {
+  if (effectiveness.value === null) return null;
+  return getEffectivenessSymbol(effectiveness.value);
+});
+
+const effectivenessClass = computed(() => {
+  if (effectiveness.value === null) return '';
+  if (effectiveness.value >= 2.0) return 'text-green-300'; // Super effective
+  if (effectiveness.value <= 0.5) return 'text-red-300'; // Not very effective
+  return 'text-yellow-300'; // Normal effectiveness
+});
 </script>

@@ -727,6 +727,7 @@
           v-for="move in activePlayerMonster?.moves || []"
           :key="move.id"
           :move="move"
+          :opponentTypes="activeOpponentMonster?.type"
           @click="$emit('move', move.id)"
         />
       </div>
