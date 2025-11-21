@@ -754,6 +754,19 @@ const executeMove = async (moveId) => {
 };
 
 const switchMonster = async (newIndex) => {
+  // Check if this is a switch after attack (とんぼ返り) or forced switch (fainting)
+  const hasPendingSwitch =
+    yourSide.value === "player"
+      ? battleState.value.pendingSwitchAfterAttack?.player
+      : battleState.value.pendingSwitchAfterAttack?.opponent;
+
+  // If switch after attack, use /action endpoint (normal action selection)
+  if (hasPendingSwitch) {
+    console.log("Switch after attack detected, using action endpoint");
+    return executeSwitchAction(newIndex);
+  }
+
+  // Otherwise, use /switch endpoint (forced switch after fainting)
   // PvP戦の場合はSocket.IOでアクションを送信
   if (battleMode.value === "pvp") {
     console.log("Sending PvP forced switch:", newIndex);

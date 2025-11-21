@@ -3,11 +3,63 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const fs = require('fs');
+const path = require('path');
 const connectDB = require('./src/config/database');
 
 // Load environment variables
 dotenv.config();
 console.log('Server starting with LATEST updated code - timestamp:', new Date().toISOString());
+
+// ログファイルの設定
+const LOG_FILE = path.join(__dirname, 'server.log');
+const MAX_LOG_LINES = 500;
+const logBuffer = [];
+
+// console.logをオーバーライドしてログファイルに保存
+const originalLog = console.log;
+const originalError = console.error;
+
+console.log = function(...args) {
+  const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' ');
+  const timestamp = new Date().toISOString();
+  const logLine = `[${timestamp}] LOG: ${message}`;
+  
+  // 元のconsole.logを呼び出し
+  originalLog.apply(console, args);
+  
+  // バッファに追加
+  logBuffer.push(logLine);
+  if (logBuffer.length > MAX_LOG_LINES) {
+    logBuffer.shift(); // 古いログを削除
+  }
+  
+  // ファイルに書き込み
+  writeLogsToFile();
+};
+
+console.error = function(...args) {
+  const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' ');
+  const timestamp = new Date().toISOString();
+  const logLine = `[${timestamp}] ERROR: ${message}`;
+  
+  // 元のconsole.errorを呼び出し
+  originalError.apply(console, args);
+  
+  // バッファに追加
+  logBuffer.push(logLine);
+  if (logBuffer.length > MAX_LOG_LINES) {
+    logBuffer.shift();
+  }
+  
+  // ファイルに書き込み
+  writeLogsToFile();
+};
+
+function writeLogsToFile() {
+  const content = logBuffer.join('\n') + '\n';
+  fs.writeFileSync(LOG_FILE, content, 'utf8');
+}
 
 // Initialize Express app
 const app = express();

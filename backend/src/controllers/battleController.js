@@ -150,12 +150,32 @@ exports.selectAction = async (req, res) => {
       const battleObj = turnResult.battle.toObject();
       console.log('After turn - Player statModifiers:', battleObj.player.party[0].statModifiers);
 
-      // If opponent needs to switch after attack, auto-select for AI
-      if (turnResult.requiresSwitch?.opponent && turnResult.battle.status === 'waiting_for_switch') {
-        await battleService.selectAIAction(turnResult.battle);
-        console.log('AI auto-selected switch after attack move');
+      // If someone needs to switch after attack, handle it
+      if (turnResult.battle.status === 'waiting_for_switch') {
+        // If opponent (AI) needs to switch, auto-select for AI
+        if (turnResult.requiresSwitch?.opponent) {
+          await battleService.selectAIAction(turnResult.battle);
+          console.log('AI auto-selected switch after attack move');
+        }
         
-        // Check if both have now selected switch actions
+        // If player needs to switch, return and wait for player selection
+        if (turnResult.requiresSwitch?.player) {
+          console.log('Player needs to select switch after attack move');
+          // Don't auto-execute turn yet, wait for player to select switch
+          await turnResult.battle.populate([
+            { path: 'player.party.monsterId', populate: { path: 'moves' } },
+            { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+          ]);
+          
+          return res.status(200).json({
+            battle: turnResult.battle.toObject(),
+            battleLog: turnResult.battleLog,
+            requiresSwitch: turnResult.requiresSwitch,
+            message: 'Turn executed, switch required'
+          });
+        }
+        
+        // Check if both have now selected switch actions (AI already auto-selected)
         if (turnResult.battle.player.selectedAction?.type && turnResult.battle.opponent.selectedAction?.type) {
           // Execute the switch turn
           const switchTurnResult = await battleService.executeTurn(turnResult.battle);

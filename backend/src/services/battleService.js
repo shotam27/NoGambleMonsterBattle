@@ -685,6 +685,16 @@ function processMoves(battle) {
         }
       }
       
+      // Skip if defender has pending switchAfterAttack (already switching out)
+      const defenderHasPendingSwitch = (name === 'player' && battle.pendingSwitchAfterAttack.opponent) ||
+                                       (name === 'opponent' && battle.pendingSwitchAfterAttack.player);
+      if (defenderHasPendingSwitch) {
+        battleLog.push({
+          message: `${defenderMember.monsterId.name}は既に引っ込んでいる！`
+        });
+        continue;
+      }
+      
       // TODO: Process pre-move abilities
       
       // Store defender's substitute state before damage
@@ -758,6 +768,12 @@ function processMoves(battle) {
       };
       
       // Process switch after attack if move has switchAfterAttack flag
+      console.log(`Checking switchAfterAttack for ${name}:`, {
+        hasSwitchAfterAttack: move.switchAfterAttack,
+        isFainted: attackerMember.isFainted,
+        currentHp: attackerMember.currentHp
+      });
+      
       if (move.switchAfterAttack && !attackerMember.isFainted && attackerMember.currentHp > 0) {
         // Find available non-fainted party members to switch to
         const availableMembers = side.party
@@ -767,6 +783,8 @@ function processMoves(battle) {
             member.currentHp > 0
           );
         
+        console.log(`${name} has ${availableMembers.length} available members to switch`);
+        
         if (availableMembers.length > 0) {
           // Mark that this side needs to switch after attack
           if (name === 'player') {
@@ -774,6 +792,11 @@ function processMoves(battle) {
           } else {
             battle.pendingSwitchAfterAttack.opponent = true;
           }
+          
+          console.log(`Set pendingSwitchAfterAttack for ${name}`, {
+            player: battle.pendingSwitchAfterAttack.player,
+            opponent: battle.pendingSwitchAfterAttack.opponent
+          });
           
           battleLog.push({
             message: `${attackerMember.monsterId.name}は戻る準備をしている！`
@@ -989,6 +1012,19 @@ async function executeTurn(battle) {
     // Phase 1: Process switches (in speed order)
     processSwitches(battle);
     
+    // After processing switches, check if waiting_for_switch should be cleared
+    if (battle.status === 'waiting_for_switch') {
+      // Check if all required switches are complete
+      const playerNeedsSwitch = battle.player.party[battle.player.activeIndex]?.isFainted || battle.pendingSwitchAfterAttack.player;
+      const opponentNeedsSwitch = battle.opponent.party[battle.opponent.activeIndex]?.isFainted || battle.pendingSwitchAfterAttack.opponent;
+      
+      // If no one needs to switch anymore, return to active status
+      if (!playerNeedsSwitch && !opponentNeedsSwitch) {
+        battle.status = 'active';
+        console.log('Switches complete, returning to active status');
+      }
+    }
+    
     // Phase 2: Process moves (by priority, then speed)
     // Skip if battle requires switch (someone fainted during switches is unlikely, but check anyway)
     if (battle.status !== 'waiting_for_switch' && battle.status !== 'finished') {
@@ -1004,7 +1040,13 @@ async function executeTurn(battle) {
     }
     
     // Check if any side has pending switch after attack (only if no fainting occurred)
-    if (battle.status === 'active') {
+    console.log('Checking pendingSwitchAfterAttack:', {
+      battleStatus: battle.status,
+      player: battle.pendingSwitchAfterAttack.player,
+      opponent: battle.pendingSwitchAfterAttack.opponent
+    });
+    
+    if (battle.status === 'active' || battle.status === 'waiting_for_actions') {
       if (battle.pendingSwitchAfterAttack.player || battle.pendingSwitchAfterAttack.opponent) {
         battle.status = 'waiting_for_switch';
         console.log('Battle requires switch after attack:', {
@@ -1034,7 +1076,10 @@ async function executeTurn(battle) {
     return {
       battle,
       battleLog,
-      requiresSwitch: battle.status === 'waiting_for_switch'
+      requiresSwitch: battle.status === 'waiting_for_switch' ? {
+        player: battle.pendingSwitchAfterAttack.player,
+        opponent: battle.pendingSwitchAfterAttack.opponent
+      } : null
     };
   } catch (error) {
     console.error('Error in executeTurn:', error);
