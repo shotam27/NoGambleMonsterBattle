@@ -543,9 +543,12 @@ onMounted(() => {
           if (log.message) {
             battleLog.value.push(log.message);
           } else if (log.attacker) {
-            battleLog.value.push(
-              `${log.attacker}の${log.move}！ ${log.damage}ダメージ！`
+            // Determine which side the attacker is on
+            const isPlayerAttacker = battleState.value.player.party.some(
+              (m) => m.monsterId?.name === log.attacker
             );
+            const side = isPlayerAttacker ? "player" : "enemy";
+            battleLog.value.push(`${side}の${log.attacker}の${log.move}！`);
           }
         }
       }
@@ -738,9 +741,12 @@ const executeMove = async (moveId) => {
         if (log.message) {
           battleLog.value.push(log.message);
         } else if (log.attacker) {
-          battleLog.value.push(
-            `${log.attacker}の${log.move}！ ${log.damage}ダメージ！`
+          // Determine which side the attacker is on
+          const isPlayerAttacker = battleState.value.player.party.some(
+            (m) => m.monsterId?.name === log.attacker
           );
+          const side = isPlayerAttacker ? "player" : "enemy";
+          battleLog.value.push(`${side}の${log.attacker}の${log.move}！`);
         }
       }
     }
@@ -856,9 +862,12 @@ const executeSwitchAction = async (newIndex) => {
         if (log.message) {
           battleLog.value.push(log.message);
         } else if (log.attacker) {
-          battleLog.value.push(
-            `${log.attacker}の${log.move}！ ${log.damage}ダメージ！`
+          // Determine which side the attacker is on
+          const isPlayerAttacker = battleState.value.player.party.some(
+            (m) => m.monsterId?.name === log.attacker
           );
+          const side = isPlayerAttacker ? "player" : "enemy";
+          battleLog.value.push(`${side}の${log.attacker}の${log.move}！`);
         }
       }
     }

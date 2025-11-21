@@ -280,7 +280,7 @@ exports.selectAction = async (req, res) => {
             battle: turnResult.battle.toObject(),
             battleLog: turnResult.battleLog,
             requiresSwitch: turnResult.requiresSwitch,
-            message: 'Turn executed, switch required'
+            message: 'ターン終了！switch required'
           });
         }
       }
@@ -289,7 +289,7 @@ exports.selectAction = async (req, res) => {
         battle: battleObj,
         battleLog: turnResult.battleLog,
         requiresSwitch: turnResult.requiresSwitch,
-        message: 'Turn executed'
+        message: 'ターン終了！'
       });
     }
 

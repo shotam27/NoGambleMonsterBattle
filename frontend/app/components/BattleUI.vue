@@ -715,9 +715,8 @@
         v-for="(log, index) in battleLog.slice(-5)"
         :key="index"
         class="text-sm mb-1"
-      >
-        {{ log }}
-      </div>
+        v-html="formatBattleLog(log)"
+      ></div>
     </div>
 
     <!-- Move Selection -->
@@ -889,5 +888,23 @@ const hasStatModifiers = (statModifiers) => {
     statModifiers.magicDefense !== 0 ||
     statModifiers.speed !== 0
   );
+};
+
+const formatBattleLog = (log) => {
+  let formatted = log;
+
+  // Replace player with blue text
+  formatted = formatted.replace(
+    /^player/,
+    '<span class="text-blue-400 font-bold">player</span>'
+  );
+
+  // Replace enemy with red text
+  formatted = formatted.replace(
+    /^enemy/,
+    '<span class="text-red-400 font-bold">enemy</span>'
+  );
+
+  return formatted;
 };
 </script>

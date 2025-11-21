@@ -577,7 +577,7 @@ function processMoves(battle) {
         if (attackerMember.usedProtectLastTurn) {
           battleLog.push({
             message: `${attackerMember.monsterId.name}の${move.name}は失敗した！`,
-            attacker: name,
+            attacker: attackerMember.monsterId.name,
             move: move.name
           });
           attackerMember.usedProtectLastTurn = false; // Reset after failed attempt
@@ -590,7 +590,7 @@ function processMoves(battle) {
         
         battleLog.push({
           message: `${attackerMember.monsterId.name}はまもる状態になった！`,
-          attacker: name,
+          attacker: attackerMember.monsterId.name,
           move: move.name
         });
         continue;
@@ -608,7 +608,7 @@ function processMoves(battle) {
         
         battleLog.push({
           message: `${attackerMember.monsterId.name}はHPを${actualHeal}回復した！`,
-          attacker: name,
+          attacker: attackerMember.monsterId.name,
           move: move.name
         });
         continue;
@@ -620,7 +620,7 @@ function processMoves(battle) {
         if (attackerMember.hasSubstitute) {
           battleLog.push({
             message: `${attackerMember.monsterId.name}の${move.name}は失敗した！（すでに分身がいる）`,
-            attacker: name,
+            attacker: attackerMember.monsterId.name,
             move: move.name
           });
           continue;
@@ -631,7 +631,7 @@ function processMoves(battle) {
         if (attackerMember.currentHp <= substituteCost) {
           battleLog.push({
             message: `${attackerMember.monsterId.name}の${move.name}は失敗した！（HPが足りない）`,
-            attacker: name,
+            attacker: attackerMember.monsterId.name,
             move: move.name
           });
           continue;
@@ -644,7 +644,7 @@ function processMoves(battle) {
         
         battleLog.push({
           message: `${attackerMember.monsterId.name}は分身を作った！`,
-          attacker: name,
+          attacker: attackerMember.monsterId.name,
           move: move.name
         });
         continue;
@@ -658,7 +658,7 @@ function processMoves(battle) {
         if (defenderMember.hasInjection) {
           battleLog.push({
             message: `${attackerMember.monsterId.name}の${move.name}は失敗した！（すでに効果がかかっている）`,
-            attacker: name,
+            attacker: attackerMember.monsterId.name,
             move: move.name
           });
           continue;
@@ -669,7 +669,7 @@ function processMoves(battle) {
         
         battleLog.push({
           message: `${defenderMember.monsterId.name}は注射された！`,
-          attacker: name,
+          attacker: attackerMember.monsterId.name,
           move: move.name
         });
         continue;
@@ -727,14 +727,14 @@ function processMoves(battle) {
         const statusName = move.statusEffect === 'poison' ? '毒' : 
                           move.statusEffect === 'paralysis' ? '麻痺' : '眠り';
         battleLog.push({
-          attacker: name,
+          attacker: attackerMember.monsterId.name,
           move: move.name,
           statusInflicted: statusName,
           targetStatus: defenderMember.status
         });
       } else {
         const logEntry = {
-          attacker: name,
+          attacker: attackerMember.monsterId.name,
           move: move.name,
           damage
         };
@@ -762,7 +762,7 @@ function processMoves(battle) {
       
       // Update lastMove
       battle.lastMove = {
-        attacker: name,
+        attacker: attackerMember.monsterId.name,
         moveId: move.id,
         damage
       };
