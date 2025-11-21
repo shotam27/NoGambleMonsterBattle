@@ -9,18 +9,18 @@
         バトルモード選択
       </h1>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
         <!-- AI戦 -->
         <button
           @click="selectMode('ai')"
           class="group relative overflow-hidden rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105"
         >
           <div
-            class="bg-gradient-to-br from-green-400 to-green-600 p-6 lg:p-8 h-48 lg:h-64 flex flex-col items-center justify-center"
+            class="bg-gradient-to-br from-green-400 to-green-600 p-6 lg:p-8 h-48 lg:h-56 flex flex-col items-center justify-center"
           >
-            <div class="text-white mb-3 lg:mb-4">
+            <div class="text-white mb-3">
               <svg
-                class="w-16 h-16 lg:w-24 lg:h-24"
+                class="w-12 h-12 lg:w-16 lg:h-16"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -33,11 +33,45 @@
                 />
               </svg>
             </div>
-            <h2 class="text-2xl lg:text-3xl font-bold text-white mb-2">AI戦</h2>
+            <h2 class="text-xl lg:text-2xl font-bold text-white mb-2">AI戦</h2>
             <p
-              class="text-sm lg:text-base text-white text-opacity-90 text-center"
+              class="text-xs lg:text-sm text-white text-opacity-90 text-center"
             >
               コンピューターと対戦
+            </p>
+          </div>
+        </button>
+
+        <!-- AI連戦モード -->
+        <button
+          @click="selectMode('ai-consecutive')"
+          class="group relative overflow-hidden rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105"
+        >
+          <div
+            class="bg-gradient-to-br from-yellow-400 to-orange-600 p-6 lg:p-8 h-48 lg:h-56 flex flex-col items-center justify-center"
+          >
+            <div class="text-white mb-3">
+              <svg
+                class="w-12 h-12 lg:w-16 lg:h-16"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
+              </svg>
+            </div>
+            <h2 class="text-xl lg:text-2xl font-bold text-white mb-2">
+              AI連戦
+            </h2>
+            <p
+              class="text-xs lg:text-sm text-white text-opacity-90 text-center"
+            >
+              連勝を目指そう
             </p>
           </div>
         </button>
@@ -48,11 +82,11 @@
           class="group relative overflow-hidden rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105"
         >
           <div
-            class="bg-gradient-to-br from-purple-400 to-purple-600 p-6 lg:p-8 h-48 lg:h-64 flex flex-col items-center justify-center"
+            class="bg-gradient-to-br from-purple-400 to-purple-600 p-6 lg:p-8 h-48 lg:h-56 flex flex-col items-center justify-center"
           >
-            <div class="text-white mb-3 lg:mb-4">
+            <div class="text-white mb-3">
               <svg
-                class="w-16 h-16 lg:w-24 lg:h-24"
+                class="w-12 h-12 lg:w-16 lg:h-16"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -65,11 +99,11 @@
                 />
               </svg>
             </div>
-            <h2 class="text-2xl lg:text-3xl font-bold text-white mb-2">
+            <h2 class="text-xl lg:text-2xl font-bold text-white mb-2">
               対人戦
             </h2>
             <p
-              class="text-sm lg:text-base text-white text-opacity-90 text-center"
+              class="text-xs lg:text-sm text-white text-opacity-90 text-center"
             >
               他のプレイヤーと対戦
             </p>

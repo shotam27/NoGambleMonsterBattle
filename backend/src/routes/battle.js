@@ -11,6 +11,9 @@ router.post('/:battleId/action', battleController.selectAction);
 // Switch active monster
 router.post('/:battleId/switch', battleController.switchMonster);
 
+// Regenerate opponent party for AI consecutive battles
+router.post('/:battleId/regenerate-opponent', battleController.regenerateOpponentParty);
+
 // Get battle status
 router.get('/:battleId/status', battleController.getBattleStatus);
 

@@ -6,7 +6,7 @@ const battleService = require('../services/battleService');
 exports.startBattle = async (req, res) => {
   console.log('====== BATTLECONTROLLER.JS - NEW VERSION LOADED ======');
   try {
-    const { playerMonsterIds, opponentMonsterIds } = req.body;
+    const { playerMonsterIds, opponentMonsterIds, isConsecutiveMode } = req.body;
 
     // Validate input
     if (!playerMonsterIds || !opponentMonsterIds || 
@@ -69,7 +69,8 @@ exports.startBattle = async (req, res) => {
         activeIndex: 0,
         selectedAction: { type: null }
       },
-      status: 'waiting_for_actions'
+      status: 'waiting_for_actions',
+      isConsecutiveMode: isConsecutiveMode || false
     });
 
     await battle.save();
@@ -210,6 +211,8 @@ exports.selectAction = async (req, res) => {
             return res.status(200).json({
               battle: switchTurnResult.battle.toObject(),
               battleLog: [...turnResult.battleLog, ...switchTurnResult.battleLog],
+              opponentTeamDefeated: turnResult.opponentTeamDefeated || switchTurnResult.opponentTeamDefeated,
+              winStreak: turnResult.winStreak || switchTurnResult.winStreak,
               requiresSwitch: switchTurnResult.requiresSwitch,
               message: 'Turn and switch executed'
             });
@@ -243,6 +246,8 @@ exports.selectAction = async (req, res) => {
               return res.status(200).json({
                 battle: switchTurnResult.battle.toObject(),
                 battleLog: [...turnResult.battleLog, ...switchTurnResult.battleLog],
+                opponentTeamDefeated: turnResult.opponentTeamDefeated || switchTurnResult.opponentTeamDefeated,
+                winStreak: turnResult.winStreak || switchTurnResult.winStreak,
                 requiresSwitch: switchTurnResult.requiresSwitch,
                 message: 'Turn and switch executed (AI battle)'
               });
@@ -261,6 +266,8 @@ exports.selectAction = async (req, res) => {
             return res.status(200).json({
               battle: turnResult.battle.toObject(),
               battleLog: turnResult.battleLog,
+              opponentTeamDefeated: turnResult.opponentTeamDefeated,
+              winStreak: turnResult.winStreak,
               requiresSwitch: turnResult.requiresSwitch,
               message: 'AI switched, waiting for player action'
             });
@@ -279,6 +286,8 @@ exports.selectAction = async (req, res) => {
           return res.status(200).json({
             battle: turnResult.battle.toObject(),
             battleLog: turnResult.battleLog,
+            opponentTeamDefeated: turnResult.opponentTeamDefeated,
+            winStreak: turnResult.winStreak,
             requiresSwitch: turnResult.requiresSwitch,
             message: 'ターン終了！switch required'
           });
@@ -288,6 +297,8 @@ exports.selectAction = async (req, res) => {
       return res.status(200).json({
         battle: battleObj,
         battleLog: turnResult.battleLog,
+        opponentTeamDefeated: turnResult.opponentTeamDefeated,
+        winStreak: turnResult.winStreak,
         requiresSwitch: turnResult.requiresSwitch,
         message: 'ターン終了！'
       });
@@ -367,6 +378,44 @@ exports.switchMonster = async (req, res) => {
     if (battle.status === 'waiting_for_switch') {
       battle.status = 'waiting_for_actions';
     }
+    
+    await battle.save();
+
+    // Populate for response
+    await battle.populate([
+      { path: 'player.party.monsterId', populate: { path: 'moves' } },
+      { path: 'opponent.party.monsterId', populate: { path: 'moves' } }
+    ]);
+
+    res.status(200).json({
+      battle: battle.toObject()
+    });
+  } catch (error) {
+    res.status(500).json({ error: true, message: error.message });
+  }
+};
+
+// Regenerate opponent party for AI consecutive battle mode
+exports.regenerateOpponentParty = async (req, res) => {
+  try {
+    const { battleId } = req.params;
+
+    const battle = await Battle.findById(battleId);
+    
+    if (!battle) {
+      return res.status(404).json({ error: true, message: 'Battle not found' });
+    }
+
+    // Generate new AI party
+    const newOpponentParty = await battleService.generateRandomAIParty();
+    
+    // Replace opponent party
+    battle.opponent.party = newOpponentParty;
+    battle.opponent.activeIndex = 0;
+    battle.opponent.selectedAction = { type: null };
+    
+    // Reset status to waiting for actions
+    battle.status = 'waiting_for_actions';
     
     await battle.save();
 

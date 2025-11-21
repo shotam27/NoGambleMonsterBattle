@@ -1,5 +1,14 @@
 <template>
   <div>
+    <!-- Win Streak Display (top right) -->
+    <div
+      v-if="winStreak > 0"
+      class="fixed top-4 right-4 bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-lg z-50"
+    >
+      <div class="text-sm font-bold">連勝</div>
+      <div class="text-2xl font-bold text-center">{{ winStreak }}</div>
+    </div>
+
     <!-- Battle Arena -->
     <div
       v-if="playerParty.length > 0 && opponentParty.length > 0"
@@ -776,6 +785,10 @@ const props = defineProps({
   isPlayerTurn: {
     type: Boolean,
     default: true,
+  },
+  winStreak: {
+    type: Number,
+    default: 0,
   },
 });
 

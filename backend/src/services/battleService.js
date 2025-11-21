@@ -1,4 +1,32 @@
 const { TYPE_CHART } = require('../config/constants');
+const Monster = require('../models/Monster');
+
+/**
+ * Generate a random AI party with 3 monsters
+ */
+async function generateRandomAIParty() {
+  // Get all available monsters
+  const allMonsters = await Monster.find({});
+  
+  // Randomly select 3 monsters
+  const shuffled = allMonsters.sort(() => 0.5 - Math.random());
+  const selectedMonsters = shuffled.slice(0, 3);
+  
+  // Create party array
+  return selectedMonsters.map(monster => ({
+    monsterId: monster._id,
+    currentHp: monster.stats.hp,
+    maxHp: monster.stats.hp,
+    isFainted: false,
+    statModifiers: {
+      attack: 0,
+      defense: 0,
+      magicAttack: 0,
+      magicDefense: 0,
+      speed: 0
+    }
+  }));
+}
 
 /**
  * Get type effectiveness multiplier
@@ -363,10 +391,33 @@ function processFainting(battle) {
     
     // Check if all opponent monsters fainted
     const allOpponentFainted = battle.opponent.party.every(m => m.isFainted);
+    console.log('Checking if all opponent fainted:', {
+      allOpponentFainted,
+      isConsecutiveMode: battle.isConsecutiveMode,
+      opponentParty: battle.opponent.party.map(m => ({ name: m.monsterId?.name, isFainted: m.isFainted }))
+    });
+    
     if (allOpponentFainted) {
-      battle.status = 'finished';
-      battle.winner = 'player';
-      return results;
+      console.log('All opponent monsters fainted! isConsecutiveMode:', battle.isConsecutiveMode);
+      
+      // Check if this is AI consecutive battle mode
+      if (battle.isConsecutiveMode) {
+        console.log('AI consecutive mode detected! Incrementing win streak');
+        // AI連戦モード: 相手を復活させて連勝カウントを増やす
+        battle.winStreak = (battle.winStreak || 0) + 1;
+        results.opponentTeamDefeated = true;
+        results.winStreak = battle.winStreak;
+        
+        console.log('Returning opponentTeamDefeated result:', results);
+        // Do not set battle as finished, will regenerate opponent party
+        return results;
+      } else {
+        console.log('Normal battle mode - setting winner to player');
+        // 通常バトル: プレイヤーの勝利
+        battle.status = 'finished';
+        battle.winner = 'player';
+        return results;
+      }
     }
     
     results.requiresOpponentSwitch = true;
@@ -821,7 +872,10 @@ function processMoves(battle) {
       battleLog.push({ message: `${opponentActiveName}はひんしになった！` });
     }
     
-    return battleLog;
+    return {
+      battleLog,
+      faintResult
+    };
   } catch (error) {
     console.error('Error in processMoves:', error);
     throw error;
@@ -1027,9 +1081,12 @@ async function executeTurn(battle) {
     
     // Phase 2: Process moves (by priority, then speed)
     // Skip if battle requires switch (someone fainted during switches is unlikely, but check anyway)
+    let faintingResults = null;
     if (battle.status !== 'waiting_for_switch' && battle.status !== 'finished') {
-      const moveLog = processMoves(battle);
-      battleLog.push(...moveLog);
+      const moveResult = processMoves(battle);
+      battleLog.push(...moveResult.battleLog);
+      faintingResults = moveResult.faintResult;
+      console.log('Fainting check results:', faintingResults);
     }
     
     // Phase 3: Process status effects
@@ -1076,6 +1133,8 @@ async function executeTurn(battle) {
     return {
       battle,
       battleLog,
+      opponentTeamDefeated: faintingResults?.opponentTeamDefeated || false,
+      winStreak: faintingResults?.winStreak || battle.winStreak || 0,
       requiresSwitch: battle.status === 'waiting_for_switch' ? {
         player: battle.pendingSwitchAfterAttack.player,
         opponent: battle.pendingSwitchAfterAttack.opponent
@@ -1163,5 +1222,6 @@ module.exports = {
   executeTurn,
   selectAction,
   selectAIAction,
-  processFainting
+  processFainting,
+  generateRandomAIParty
 };

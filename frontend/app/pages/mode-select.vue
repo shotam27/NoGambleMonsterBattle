@@ -282,6 +282,7 @@
             :playerActiveIndex="playerActiveIndex"
             :opponentActiveIndex="opponentActiveIndex"
             :battleLog="battleLog"
+            :winStreak="battleState.winStreak || 0"
             :isPlayerTurn="
               !requiresSwitch && battleState.status === 'waiting_for_actions'
             "
@@ -301,6 +302,14 @@
               <h2 class="text-3xl font-bold mb-4">
                 {{ isVictory ? "勝利！" : "敗北..." }}
               </h2>
+              <div
+                v-if="battleMode === 'ai-consecutive' && !isVictory"
+                class="mb-4"
+              >
+                <p class="text-xl text-gray-300">
+                  連勝記録: {{ battleState.winStreak }}
+                </p>
+              </div>
               <button
                 @click="goBackToSelect"
                 class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-6 rounded"
@@ -401,8 +410,8 @@ const isVictory = computed(() => {
     return false;
   }
 
-  // AI戦の場合は従来通り
-  if (battleMode.value === "ai") {
+  // AI戦またはAI連戦の場合は従来通り
+  if (battleMode.value === "ai" || battleMode.value === "ai-consecutive") {
     return battleState.value.winner === "player";
   }
 
@@ -595,8 +604,8 @@ const handleModeSelection = async (mode) => {
   console.log("handleModeSelection called with mode:", mode);
   battleMode.value = mode;
 
-  if (mode === "ai") {
-    // AI戦の場合は従来通りバトル作成
+  if (mode === "ai" || mode === "ai-consecutive") {
+    // AI戦またはAI連戦の場合はバトル作成
     console.log("Starting AI battle...");
     await startAIBattle();
   } else if (mode === "pvp") {
@@ -640,6 +649,7 @@ const startAIBattle = async () => {
       body: JSON.stringify({
         playerMonsterIds: playerIds,
         opponentMonsterIds: opponentMonsters.map((m) => m._id),
+        isConsecutiveMode: battleMode.value === "ai-consecutive",
       }),
     });
 
@@ -732,6 +742,18 @@ const executeMove = async (moveId) => {
 
     const result = await response.json();
 
+    // Check if opponent team was defeated (AI consecutive battle mode)
+    if (result.opponentTeamDefeated) {
+      // Show victory message with win streak
+      battleLog.value.push(
+        `相手のパーティを全滅させた！連勝: ${result.winStreak}`
+      );
+
+      // Regenerate opponent party
+      await regenerateOpponentParty();
+      return;
+    }
+
     // Update battle state
     battleState.value = result.battle;
 
@@ -800,6 +822,19 @@ const switchMonster = async (newIndex) => {
     if (!response.ok) throw new Error("交代に失敗しました");
 
     const result = await response.json();
+
+    // Check if opponent team was defeated (AI consecutive battle mode)
+    if (result.opponentTeamDefeated) {
+      // Show victory message with win streak
+      battleLog.value.push(
+        `相手のパーティを全滅させた！連勝: ${result.winStreak}`
+      );
+
+      // Regenerate opponent party
+      await regenerateOpponentParty();
+      return;
+    }
+
     battleState.value = result.battle;
 
     const monsterName =
@@ -848,6 +883,18 @@ const executeSwitchAction = async (newIndex) => {
     if (!response.ok) throw new Error("交代に失敗しました");
 
     const result = await response.json();
+
+    // Check if opponent team was defeated (AI consecutive battle mode)
+    if (result.opponentTeamDefeated) {
+      // Show victory message with win streak
+      battleLog.value.push(
+        `相手のパーティを全滅させた！連勝: ${result.winStreak}`
+      );
+
+      // Regenerate opponent party
+      await regenerateOpponentParty();
+      return;
+    }
 
     // Update battle state
     battleState.value = result.battle;
@@ -902,6 +949,28 @@ const cancelWaiting = () => {
   }
   // 待機モーダルを閉じる（action-cancelledイベントで再度falseになるが念のため）
   waitingForOpponent.value = false;
+};
+
+// Regenerate opponent party for AI consecutive battles
+const regenerateOpponentParty = async () => {
+  try {
+    const response = await fetch(
+      `${apiBaseUrl}/battle/${battleId.value}/regenerate-opponent`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    if (!response.ok) throw new Error("相手パーティの再生成に失敗しました");
+
+    const result = await response.json();
+    battleState.value = result.battle;
+
+    battleLog.value.push("新しい相手が現れた！");
+  } catch (err) {
+    error.value = err.message;
+  }
 };
 
 // タイプ表示用のヘルパー関数

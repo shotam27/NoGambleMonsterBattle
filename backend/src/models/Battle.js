@@ -109,6 +109,14 @@ const battleSchema = new mongoose.Schema({
     enum: ['ai', 'pvp'],
     default: 'ai'
   },
+  isConsecutiveMode: {
+    type: Boolean,
+    default: false
+  },
+  winStreak: {
+    type: Number,
+    default: 0
+  },
   winner: {
     type: String,
     enum: ['player', 'opponent', 'draw'],
