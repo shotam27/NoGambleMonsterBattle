@@ -244,6 +244,7 @@ function processSwitches(battle) {
 
 /**
  * Process move damage and status effects
+ * Returns { damage, statChanges, statusEffect }
  */
 function processDamage(battle, attacker, defender, move) {
   console.log('processDamage called with move:', JSON.stringify({
@@ -258,21 +259,23 @@ function processDamage(battle, attacker, defender, move) {
   const defenderMonster = defenderMember.monsterId;
   
   let damage = 0;
+  let typeResistanceMultiplier = 1.0; // Default no resistance
+  const statChanges = []; // Track stat changes for logging
+  let statusEffect = null; // Track status effect for logging
   
   // Check if defender is protecting
   if (defenderMember.isProtecting) {
     console.log('Defender is protecting, move blocked');
     defenderMember.isProtecting = false; // Reset protect flag after blocking
-    return 0; // No damage or status effects applied
+    return { damage: 0, statChanges, statusEffect }; // No damage or status effects applied
   }
   
   // Check for type resistance ability
   if (defenderMonster && defenderMonster.ability) {
     const ability = defenderMonster.ability;
     if (ability.effectType === 'typeResistance' && ability.typeResistance && ability.typeResistance.type === move.type) {
-      const multiplier = ability.typeResistance.multiplier;
-      console.log(`Ability ${ability.name} reduces damage from ${move.name} by multiplier ${multiplier}`);
-      return -1 - multiplier; // Special value: -1 for 0x, -1.25 for 0.25x, -1.5 for 0.5x
+      typeResistanceMultiplier = ability.typeResistance.multiplier;
+      console.log(`Ability ${ability.name} will reduce damage from ${move.name} by multiplier ${typeResistanceMultiplier}`);
     }
   }
   
@@ -281,12 +284,13 @@ function processDamage(battle, attacker, defender, move) {
     // Substitute blocks status effects and stat debuffs (but not self-buffs)
     if (defenderMember.hasSubstitute && move.statChange && move.statChange.target === 'opponent') {
       // Substitute blocks opponent-targeted stat changes
-      return 0;
+      return { damage: 0, statChanges, statusEffect };
     }
     
     // Apply status effect (substitute blocks this too)
     if (move.statusEffect && defenderMember.status === 'none' && !defenderMember.hasSubstitute) {
       defenderMember.status = move.statusEffect;
+      statusEffect = move.statusEffect;
       
       // Set sleep turns if applying sleep
       if (move.statusEffect === 'sleep') {
@@ -297,6 +301,7 @@ function processDamage(battle, attacker, defender, move) {
     // Apply stat modifiers
     if (move.statChange) {
       const target = move.statChange.target === 'self' ? attacker.party[attacker.activeIndex] : defenderMember;
+      const targetMonster = target.monsterId;
       const stat = move.statChange.stat;
       const stages = move.statChange.stages;
       
@@ -312,8 +317,19 @@ function processDamage(battle, attacker, defender, move) {
         target.statModifiers = { attack: 0, defense: 0, magicAttack: 0, magicDefense: 0, speed: 0 };
       }
       
+      const oldValue = target.statModifiers[stat] || 0;
       // Clamp to -2 to +2 range
-      target.statModifiers[stat] = Math.max(-2, Math.min(2, (target.statModifiers[stat] || 0) + stages));
+      target.statModifiers[stat] = Math.max(-2, Math.min(2, oldValue + stages));
+      
+      // Record stat change if it actually changed
+      if (target.statModifiers[stat] !== oldValue) {
+        statChanges.push({
+          target: move.statChange.target,
+          targetName: targetMonster.name,
+          stat,
+          stages: target.statModifiers[stat] - oldValue
+        });
+      }
       
       console.log(`After stat change:`, {
         afterStatModifiers: target.statModifiers
@@ -323,13 +339,9 @@ function processDamage(battle, attacker, defender, move) {
     // Regular damage move
     damage = calculateDamage(attackerMonster, defenderMonster, move, attacker.party[attacker.activeIndex], defenderMember);
     
-    // Apply type resistance ability multiplier if present
-    if (defenderMonster.ability && defenderMonster.ability.effectType === 'typeResistance' && 
-        defenderMonster.ability.typeResistance && defenderMonster.ability.typeResistance.type === move.type) {
-      const multiplier = defenderMonster.ability.typeResistance.multiplier;
-      damage = Math.floor(damage * multiplier);
-      console.log(`Applied type resistance multiplier ${multiplier}, final damage: ${damage}`);
-    }
+    // Apply type resistance ability multiplier
+    damage = Math.floor(damage * typeResistanceMultiplier);
+    console.log(`Applied type resistance multiplier ${typeResistanceMultiplier}, final damage: ${damage}`);
     
     // Check if defender has substitute
     if (defenderMember.hasSubstitute) {
@@ -351,6 +363,7 @@ function processDamage(battle, attacker, defender, move) {
     // Apply status effect if move has statusEffect (substitute blocks this)
     if (move.statusEffect && defenderMember.status === 'none' && !defenderMember.hasSubstitute) {
       defenderMember.status = move.statusEffect;
+      statusEffect = move.statusEffect;
       
       // Set sleep turns if applying sleep
       if (move.statusEffect === 'sleep') {
@@ -361,6 +374,7 @@ function processDamage(battle, attacker, defender, move) {
     // Apply stat modifiers on damage moves (substitute blocks opponent-targeted debuffs)
     if (move.statChange) {
       const target = move.statChange.target === 'self' ? attacker.party[attacker.activeIndex] : defenderMember;
+      const targetMonster = target.monsterId;
       const stat = move.statChange.stat;
       const stages = move.statChange.stages;
       
@@ -372,13 +386,24 @@ function processDamage(battle, attacker, defender, move) {
           target.statModifiers = { attack: 0, defense: 0, magicAttack: 0, magicDefense: 0, speed: 0 };
         }
         
+        const oldValue = target.statModifiers[stat] || 0;
         // Clamp to -2 to +2 range
-        target.statModifiers[stat] = Math.max(-2, Math.min(2, (target.statModifiers[stat] || 0) + stages));
+        target.statModifiers[stat] = Math.max(-2, Math.min(2, oldValue + stages));
+        
+        // Record stat change if it actually changed
+        if (target.statModifiers[stat] !== oldValue) {
+          statChanges.push({
+            target: move.statChange.target,
+            targetName: targetMonster.name,
+            stat,
+            stages: target.statModifiers[stat] - oldValue
+          });
+        }
       }
     }
   }
   
-  return damage;
+  return { damage, statChanges, statusEffect };
 }
 
 /**
@@ -815,26 +840,33 @@ function processMoves(battle) {
       const hadSubstitute = defenderMember.hasSubstitute;
       const wasProtecting = defenderMember.isProtecting;
       
-      // Process damage or status effect
-      const damage = processDamage(battle, side, opponent, move);
-      
-      // Check if move was affected by ability (type resistance)
-      if (damage < -1) {
-        const defenderAbility = defenderMember.monsterId.ability;
-        const multiplier = -(damage + 1); // Extract multiplier from special value
+      // Check for type resistance ability and log it
+      const defenderAbility = defenderMember.monsterId?.ability;
+      let abilityActivated = false;
+      if (defenderAbility && defenderAbility.effectType === 'typeResistance' && 
+          defenderAbility.typeResistance && defenderAbility.typeResistance.type === move.type) {
+        abilityActivated = true;
+        const multiplier = defenderAbility.typeResistance.multiplier;
         if (multiplier === 0) {
           battleLog.push({
             message: `${defenderMember.monsterId.name}の${defenderAbility.name}で${move.name}を無効化した！`
           });
         } else {
           battleLog.push({
-            message: `${defenderMember.monsterId.name}の${defenderAbility.name}で${move.name}のダメージを軽減！`
+            message: `${defenderMember.monsterId.name}の${defenderAbility.name}が発動！`
           });
         }
-        if (multiplier === 0) {
-          continue; // Skip all subsequent effects if completely blocked
-        }
-        // Continue with reduced damage (will be calculated in processDamage)
+      }
+      
+      // Process damage or status effect
+      const result = processDamage(battle, side, opponent, move);
+      const damage = result.damage;
+      const statChanges = result.statChanges;
+      const statusEffect = result.statusEffect;
+      
+      // Check if ability completely blocked the move
+      if (abilityActivated && damage === 0 && move.category !== 'status') {
+        continue; // Skip all subsequent effects if completely blocked by ability
       }
       
       // Check if move was blocked by protect
@@ -856,41 +888,55 @@ function processMoves(battle) {
       });
       
       // Add move to battle log
-      if (move.category === 'status') {
-        const statusName = move.statusEffect === 'poison' ? '毒' : 
-                          move.statusEffect === 'paralysis' ? '麻痺' : '眠り';
-        battleLog.push({
-          attacker: attackerMember.monsterId.name,
-          move: move.name,
-          statusInflicted: statusName,
-          targetStatus: defenderMember.status
-        });
-      } else {
-        const logEntry = {
-          attacker: attackerMember.monsterId.name,
-          move: move.name,
-          damage
+      const logEntry = {
+        side: name,
+        attacker: attackerMember.monsterId.name,
+        move: move.name,
+        damage: damage
+      };
+      
+      // Add status effect if inflicted
+      if (statusEffect) {
+        const statusName = statusEffect === 'poison' ? '毒' : 
+                          statusEffect === 'paralysis' ? '麻痺' : '眠り';
+        logEntry.statusInflicted = statusName;
+      }
+      
+      // Add substitute info to log
+      if (hadSubstitute && move.power < 70) {
+        logEntry.substituteBlocked = true;
+      } else if (substituteBroken) {
+        logEntry.substituteBroken = true;
+      }
+      
+      battleLog.push(logEntry);
+      
+      // Add stat change messages
+      for (const statChange of statChanges) {
+        const statLabels = { 
+          attack: '攻撃', 
+          defense: '防御', 
+          magicAttack: '魔法攻撃', 
+          magicDefense: '魔法防御', 
+          speed: '素早さ' 
         };
-        
-        // Add substitute info to log
-        if (hadSubstitute && move.power < 70) {
-          logEntry.substituteBlocked = true;
-        } else if (substituteBroken) {
-          logEntry.substituteBroken = true;
-        }
-        
-        battleLog.push(logEntry);
-        
-        // Add message for substitute interaction
-        if (hadSubstitute && move.power < 70) {
-          battleLog.push({
-            message: `${defenderMember.monsterId.name}の分身が攻撃を防いだ！`
-          });
-        } else if (substituteBroken) {
-          battleLog.push({
-            message: `${defenderMember.monsterId.name}の分身が壊れた！`
-          });
-        }
+        const stageLabel = statChange.stages > 0 ? 
+          `${statChange.stages}段階上がった` : 
+          `${Math.abs(statChange.stages)}段階下がった`;
+        battleLog.push({
+          message: `${statChange.targetName}の${statLabels[statChange.stat]}が${stageLabel}！`
+        });
+      }
+      
+      // Add message for substitute interaction
+      if (hadSubstitute && move.power < 70) {
+        battleLog.push({
+          message: `${defenderMember.monsterId.name}の分身が攻撃を防いだ！`
+        });
+      } else if (substituteBroken) {
+        battleLog.push({
+          message: `${defenderMember.monsterId.name}の分身が壊れた！`
+        });
       }
       
       // Update lastMove

@@ -552,12 +552,28 @@ onMounted(() => {
           if (log.message) {
             battleLog.value.push(log.message);
           } else if (log.attacker) {
-            // Determine which side the attacker is on
-            const isPlayerAttacker = battleState.value.player.party.some(
-              (m) => m.monsterId?.name === log.attacker
-            );
-            const side = isPlayerAttacker ? "player" : "enemy";
-            battleLog.value.push(`${side}の${log.attacker}の${log.move}！`);
+            // Use the side field if available, otherwise determine from party
+            let side = log.side;
+            if (!side) {
+              const isPlayerAttacker = battleState.value.player.party.some(
+                (m) => m.monsterId?.name === log.attacker
+              );
+              side = isPlayerAttacker ? "player" : "opponent";
+            }
+            const sideLabel = side === "player" ? "player" : "enemy";
+            let logMessage = `${sideLabel}の${log.attacker}の${log.move}！`;
+
+            // Add damage info
+            if (log.damage !== undefined && log.damage > 0) {
+              logMessage += ` ${log.damage}ダメージ！`;
+            }
+
+            // Add status effect info
+            if (log.statusInflicted) {
+              logMessage += ` ${log.statusInflicted}状態にした！`;
+            }
+
+            battleLog.value.push(logMessage);
           }
         }
       }
@@ -763,12 +779,28 @@ const executeMove = async (moveId) => {
         if (log.message) {
           battleLog.value.push(log.message);
         } else if (log.attacker) {
-          // Determine which side the attacker is on
-          const isPlayerAttacker = battleState.value.player.party.some(
-            (m) => m.monsterId?.name === log.attacker
-          );
-          const side = isPlayerAttacker ? "player" : "enemy";
-          battleLog.value.push(`${side}の${log.attacker}の${log.move}！`);
+          // Use the side field if available, otherwise determine from party
+          let side = log.side;
+          if (!side) {
+            const isPlayerAttacker = battleState.value.player.party.some(
+              (m) => m.monsterId?.name === log.attacker
+            );
+            side = isPlayerAttacker ? "player" : "opponent";
+          }
+          const sideLabel = side === "player" ? "player" : "enemy";
+          let logMessage = `${sideLabel}の${log.attacker}の${log.move}！`;
+
+          // Add damage info
+          if (log.damage !== undefined && log.damage > 0) {
+            logMessage += ` ${log.damage}ダメージ！`;
+          }
+
+          // Add status effect info
+          if (log.statusInflicted) {
+            logMessage += ` ${log.statusInflicted}状態にした！`;
+          }
+
+          battleLog.value.push(logMessage);
         }
       }
     }
@@ -909,12 +941,28 @@ const executeSwitchAction = async (newIndex) => {
         if (log.message) {
           battleLog.value.push(log.message);
         } else if (log.attacker) {
-          // Determine which side the attacker is on
-          const isPlayerAttacker = battleState.value.player.party.some(
-            (m) => m.monsterId?.name === log.attacker
-          );
-          const side = isPlayerAttacker ? "player" : "enemy";
-          battleLog.value.push(`${side}の${log.attacker}の${log.move}！`);
+          // Use the side field if available, otherwise determine from party
+          let side = log.side;
+          if (!side) {
+            const isPlayerAttacker = battleState.value.player.party.some(
+              (m) => m.monsterId?.name === log.attacker
+            );
+            side = isPlayerAttacker ? "player" : "opponent";
+          }
+          const sideLabel = side === "player" ? "player" : "enemy";
+          let logMessage = `${sideLabel}の${log.attacker}の${log.move}！`;
+
+          // Add damage info
+          if (log.damage !== undefined && log.damage > 0) {
+            logMessage += ` ${log.damage}ダメージ！`;
+          }
+
+          // Add status effect info
+          if (log.statusInflicted) {
+            logMessage += ` ${log.statusInflicted}状態にした！`;
+          }
+
+          battleLog.value.push(logMessage);
         }
       }
     }
