@@ -358,7 +358,7 @@ exports.selectAction = async (req, res) => {
             opponentTeamDefeated: turnResult.opponentTeamDefeated,
             winStreak: turnResult.winStreak,
             requiresSwitch: turnResult.requiresSwitch,
-            message: 'ターン終了！switch required'
+            message: 'switch required'
           });
         }
       }

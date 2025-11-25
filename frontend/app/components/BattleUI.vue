@@ -22,53 +22,85 @@
 
         <!-- Active Monster -->
         <div
-          class="mb-3 lg:mb-4 p-3 lg:p-4 rounded-lg relative group border-4 overflow-hidden"
-          :style="getMonsterBoxStyle(activePlayerMonster)"
+          class="mb-3 lg:mb-4 p-3 lg:p-4 rounded-lg relative group border-4 overflow-hidden transition-all duration-300"
+          :class="{
+            'monster-attack': animatingMonster === 'player',
+            'monster-damage': damagedMonster === 'player',
+            'opacity-60':
+              displayedPlayerParty[displayedPlayerActiveIndex]?.isFainted,
+          }"
+          :style="getMonsterBoxStyle(displayedActivePlayerMonster)"
         >
           <!-- Dark overlay for readability when background image is present -->
           <div
-            v-if="activePlayerMonster?.id"
+            v-if="displayedActivePlayerMonster?.id"
             class="absolute inset-0 bg-black opacity-70 pointer-events-none"
           ></div>
-          <div v-if="activePlayerMonster" class="mb-2 relative z-10">
+
+          <!-- ひんし表示 -->
+          <div
+            v-if="displayedPlayerParty[displayedPlayerActiveIndex]?.isFainted"
+            class="absolute inset-0 flex items-center justify-center z-30"
+          >
+            <div
+              class="text-4xl lg:text-5xl font-bold text-red-500 bg-black bg-opacity-80 px-6 py-3 rounded-lg shadow-2xl"
+            >
+              ひんし
+            </div>
+          </div>
+
+          <div v-if="displayedActivePlayerMonster" class="mb-2 relative z-10">
             <p class="text-xl lg:text-2xl font-bold">
-              {{ activePlayerMonster.name }}
+              {{ displayedActivePlayerMonster.name }}
             </p>
             <p class="text-xs lg:text-sm text-gray-400">
-              {{ typeLabel(activePlayerMonster.type) }}
+              {{ typeLabel(displayedActivePlayerMonster.type) }}
             </p>
           </div>
           <HealthBar
-            v-if="playerParty[playerActiveIndex]"
-            :current="playerParty[playerActiveIndex].currentHp"
-            :max="playerParty[playerActiveIndex].maxHp"
+            v-if="displayedPlayerParty[displayedPlayerActiveIndex]"
+            :current="displayedPlayerHp"
+            :max="displayedPlayerParty[displayedPlayerActiveIndex].maxHp"
             class="relative z-10"
           />
           <div
-            v-if="playerParty[playerActiveIndex]"
+            v-if="displayedPlayerParty[displayedPlayerActiveIndex]"
             class="mt-2 text-xs lg:text-sm text-center relative z-10"
           >
-            {{ playerParty[playerActiveIndex].currentHp }} /
-            {{ playerParty[playerActiveIndex].maxHp }} HP
+            {{ displayedPlayerHp }} /
+            {{ displayedPlayerParty[displayedPlayerActiveIndex].maxHp }} HP
             <span
               v-if="
-                playerParty[playerActiveIndex].status &&
-                playerParty[playerActiveIndex].status !== 'none'
+                displayedPlayerParty[displayedPlayerActiveIndex].status &&
+                displayedPlayerParty[displayedPlayerActiveIndex].status !==
+                  'none'
               "
               class="ml-2 px-2 py-0.5 rounded text-xs font-bold"
-              :class="getStatusClass(playerParty[playerActiveIndex].status)"
+              :class="
+                getStatusClass(
+                  displayedPlayerParty[displayedPlayerActiveIndex].status
+                )
+              "
             >
-              {{ getStatusLabel(playerParty[playerActiveIndex].status) }}
+              {{
+                getStatusLabel(
+                  displayedPlayerParty[displayedPlayerActiveIndex].status
+                )
+              }}
             </span>
             <span
-              v-if="playerParty[playerActiveIndex].hasSubstitute"
+              v-if="
+                displayedPlayerParty[displayedPlayerActiveIndex].hasSubstitute
+              "
               class="ml-2 px-2 py-0.5 rounded text-xs font-bold bg-purple-600"
               title="分身状態"
             >
               🎭 分身
             </span>
             <span
-              v-if="playerParty[playerActiveIndex].hasInjection"
+              v-if="
+                displayedPlayerParty[displayedPlayerActiveIndex].hasInjection
+              "
               class="ml-2 px-2 py-0.5 rounded text-xs font-bold bg-green-600"
               title="注射状態"
             >
@@ -78,85 +110,108 @@
 
           <!-- Stat Modifiers Display -->
           <div
-            v-if="playerParty[playerActiveIndex]?.statModifiers"
+            v-if="
+              displayedPlayerParty[displayedPlayerActiveIndex]?.statModifiers
+            "
             class="mt-2 flex flex-wrap gap-1 justify-center relative z-10"
           >
             <span
-              v-if="playerParty[playerActiveIndex].statModifiers.attack !== 0"
+              v-if="
+                displayedPlayerParty[displayedPlayerActiveIndex].statModifiers
+                  .attack !== 0
+              "
               class="px-2 py-0.5 rounded text-xs font-bold"
               :class="
-                playerParty[playerActiveIndex].statModifiers.attack > 0
+                displayedPlayerParty[displayedPlayerActiveIndex].statModifiers
+                  .attack > 0
                   ? 'bg-green-600'
                   : 'bg-red-600'
               "
             >
               攻{{
                 getStatModifierText(
-                  playerParty[playerActiveIndex].statModifiers.attack
+                  displayedPlayerParty[displayedPlayerActiveIndex].statModifiers
+                    .attack
                 )
               }}
             </span>
             <span
-              v-if="playerParty[playerActiveIndex].statModifiers.defense !== 0"
+              v-if="
+                displayedPlayerParty[displayedPlayerActiveIndex].statModifiers
+                  .defense !== 0
+              "
               class="px-2 py-0.5 rounded text-xs font-bold"
               :class="
-                playerParty[playerActiveIndex].statModifiers.defense > 0
+                displayedPlayerParty[displayedPlayerActiveIndex].statModifiers
+                  .defense > 0
                   ? 'bg-green-600'
                   : 'bg-red-600'
               "
             >
               防{{
                 getStatModifierText(
-                  playerParty[playerActiveIndex].statModifiers.defense
+                  displayedPlayerParty[displayedPlayerActiveIndex].statModifiers
+                    .defense
                 )
               }}
             </span>
             <span
               v-if="
-                playerParty[playerActiveIndex].statModifiers.magicAttack !== 0
+                displayedPlayerParty[displayedPlayerActiveIndex].statModifiers
+                  .magicAttack !== 0
               "
               class="px-2 py-0.5 rounded text-xs font-bold"
               :class="
-                playerParty[playerActiveIndex].statModifiers.magicAttack > 0
+                displayedPlayerParty[displayedPlayerActiveIndex].statModifiers
+                  .magicAttack > 0
                   ? 'bg-green-600'
                   : 'bg-red-600'
               "
             >
               特攻{{
                 getStatModifierText(
-                  playerParty[playerActiveIndex].statModifiers.magicAttack
+                  displayedPlayerParty[displayedPlayerActiveIndex].statModifiers
+                    .magicAttack
                 )
               }}
             </span>
             <span
               v-if="
-                playerParty[playerActiveIndex].statModifiers.magicDefense !== 0
+                displayedPlayerParty[displayedPlayerActiveIndex].statModifiers
+                  .magicDefense !== 0
               "
               class="px-2 py-0.5 rounded text-xs font-bold"
               :class="
-                playerParty[playerActiveIndex].statModifiers.magicDefense > 0
+                displayedPlayerParty[displayedPlayerActiveIndex].statModifiers
+                  .magicDefense > 0
                   ? 'bg-green-600'
                   : 'bg-red-600'
               "
             >
               特防{{
                 getStatModifierText(
-                  playerParty[playerActiveIndex].statModifiers.magicDefense
+                  displayedPlayerParty[displayedPlayerActiveIndex].statModifiers
+                    .magicDefense
                 )
               }}
             </span>
             <span
-              v-if="playerParty[playerActiveIndex].statModifiers.speed !== 0"
+              v-if="
+                displayedPlayerParty[displayedPlayerActiveIndex].statModifiers
+                  .speed !== 0
+              "
               class="px-2 py-0.5 rounded text-xs font-bold"
               :class="
-                playerParty[playerActiveIndex].statModifiers.speed > 0
+                displayedPlayerParty[displayedPlayerActiveIndex].statModifiers
+                  .speed > 0
                   ? 'bg-green-600'
                   : 'bg-red-600'
               "
             >
               速{{
                 getStatModifierText(
-                  playerParty[playerActiveIndex].statModifiers.speed
+                  displayedPlayerParty[displayedPlayerActiveIndex].statModifiers
+                    .speed
                 )
               }}
             </span>
@@ -290,11 +345,13 @@
         <!-- Party Members -->
         <div class="grid grid-cols-3 gap-1 lg:gap-2">
           <div
-            v-for="(member, index) in playerParty"
+            v-for="(member, index) in displayedPlayerParty"
             :key="index"
             :class="[
               'p-1.5 lg:p-2 rounded text-center text-xs lg:text-sm relative group cursor-pointer',
-              index === playerActiveIndex ? 'bg-yellow-600' : 'bg-gray-700',
+              index === displayedPlayerActiveIndex
+                ? 'bg-yellow-600'
+                : 'bg-gray-700',
               member.isFainted ? 'opacity-50' : '',
             ]"
             @click="openMonsterDetail(member.monsterId)"
@@ -312,7 +369,7 @@
 
             <!-- Hover Stats Tooltip for Party Members -->
             <div
-              v-if="member.monsterId && index !== playerActiveIndex"
+              v-if="member.monsterId && index !== displayedPlayerActiveIndex"
               class="absolute left-0 top-full mt-2 bg-gray-900 border-2 border-blue-500 rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none min-w-max hidden lg:block"
             >
               <div class="text-xs space-y-1">
@@ -365,53 +422,89 @@
 
         <!-- Active Monster -->
         <div
-          class="mb-3 lg:mb-4 p-3 lg:p-4 rounded-lg relative group border-4 overflow-hidden"
-          :style="getMonsterBoxStyle(activeOpponentMonster)"
+          class="mb-3 lg:mb-4 p-3 lg:p-4 rounded-lg relative group border-4 overflow-hidden transition-all duration-300"
+          :class="{
+            'monster-attack': animatingMonster === 'opponent',
+            'monster-damage': damagedMonster === 'opponent',
+            'opacity-60':
+              displayedOpponentParty[displayedOpponentActiveIndex]?.isFainted,
+          }"
+          :style="getMonsterBoxStyle(displayedActiveOpponentMonster)"
         >
           <!-- Dark overlay for readability when background image is present -->
           <div
-            v-if="activeOpponentMonster?.id"
+            v-if="displayedActiveOpponentMonster?.id"
             class="absolute inset-0 bg-black opacity-70 pointer-events-none"
           ></div>
-          <div v-if="activeOpponentMonster" class="mb-2 relative z-10">
+
+          <!-- ひんし表示 -->
+          <div
+            v-if="
+              displayedOpponentParty[displayedOpponentActiveIndex]?.isFainted
+            "
+            class="absolute inset-0 flex items-center justify-center z-30"
+          >
+            <div
+              class="text-4xl lg:text-5xl font-bold text-red-500 bg-black bg-opacity-80 px-6 py-3 rounded-lg shadow-2xl"
+            >
+              ひんし
+            </div>
+          </div>
+
+          <div v-if="displayedActiveOpponentMonster" class="mb-2 relative z-10">
             <p class="text-xl lg:text-2xl font-bold">
-              {{ activeOpponentMonster.name }}
+              {{ displayedActiveOpponentMonster.name }}
             </p>
             <p class="text-sm text-gray-400">
-              {{ typeLabel(activeOpponentMonster.type) }}
+              {{ typeLabel(displayedActiveOpponentMonster.type) }}
             </p>
           </div>
           <HealthBar
-            v-if="opponentParty[opponentActiveIndex]"
-            :current="opponentParty[opponentActiveIndex].currentHp"
-            :max="opponentParty[opponentActiveIndex].maxHp"
+            v-if="displayedOpponentParty[displayedOpponentActiveIndex]"
+            :current="displayedOpponentHp"
+            :max="displayedOpponentParty[displayedOpponentActiveIndex].maxHp"
             class="relative z-10"
           />
           <div
-            v-if="opponentParty[opponentActiveIndex]"
+            v-if="displayedOpponentParty[displayedOpponentActiveIndex]"
             class="mt-2 text-sm text-center relative z-10"
           >
-            {{ opponentParty[opponentActiveIndex].currentHp }} /
-            {{ opponentParty[opponentActiveIndex].maxHp }} HP
+            {{ displayedOpponentHp }} /
+            {{ displayedOpponentParty[displayedOpponentActiveIndex].maxHp }} HP
             <span
               v-if="
-                opponentParty[opponentActiveIndex].status &&
-                opponentParty[opponentActiveIndex].status !== 'none'
+                displayedOpponentParty[displayedOpponentActiveIndex].status &&
+                displayedOpponentParty[displayedOpponentActiveIndex].status !==
+                  'none'
               "
               class="ml-2 px-2 py-0.5 rounded text-xs font-bold"
-              :class="getStatusClass(opponentParty[opponentActiveIndex].status)"
+              :class="
+                getStatusClass(
+                  displayedOpponentParty[displayedOpponentActiveIndex].status
+                )
+              "
             >
-              {{ getStatusLabel(opponentParty[opponentActiveIndex].status) }}
+              {{
+                getStatusLabel(
+                  displayedOpponentParty[displayedOpponentActiveIndex].status
+                )
+              }}
             </span>
             <span
-              v-if="opponentParty[opponentActiveIndex].hasSubstitute"
+              v-if="
+                displayedOpponentParty[displayedOpponentActiveIndex]
+                  .hasSubstitute
+              "
               class="ml-2 px-2 py-0.5 rounded text-xs font-bold bg-purple-600"
               title="分身状態"
             >
               🎭 分身
             </span>
             <span
-              v-if="opponentParty[opponentActiveIndex].hasInjection"
+              v-if="
+                displayedOpponentParty[displayedOpponentActiveIndex]
+                  .hasInjection
+              "
               class="ml-2 px-2 py-0.5 rounded text-xs font-bold bg-green-600"
               title="注射状態"
             >
@@ -421,94 +514,109 @@
 
           <!-- Stat Modifiers Display -->
           <div
-            v-if="opponentParty[opponentActiveIndex]?.statModifiers"
+            v-if="
+              displayedOpponentParty[displayedOpponentActiveIndex]
+                ?.statModifiers
+            "
             class="mt-2 flex flex-wrap gap-1 justify-center relative z-10"
           >
             <span
               v-if="
-                opponentParty[opponentActiveIndex].statModifiers.attack !== 0
+                displayedOpponentParty[displayedOpponentActiveIndex]
+                  .statModifiers.attack !== 0
               "
               class="px-2 py-0.5 rounded text-xs font-bold"
               :class="
-                opponentParty[opponentActiveIndex].statModifiers.attack > 0
+                displayedOpponentParty[displayedOpponentActiveIndex]
+                  .statModifiers.attack > 0
                   ? 'bg-green-600'
                   : 'bg-red-600'
               "
             >
               攻{{
                 getStatModifierText(
-                  opponentParty[opponentActiveIndex].statModifiers.attack
+                  displayedOpponentParty[displayedOpponentActiveIndex]
+                    .statModifiers.attack
                 )
               }}
             </span>
             <span
               v-if="
-                opponentParty[opponentActiveIndex].statModifiers.defense !== 0
+                displayedOpponentParty[displayedOpponentActiveIndex]
+                  .statModifiers.defense !== 0
               "
               class="px-2 py-0.5 rounded text-xs font-bold"
               :class="
-                opponentParty[opponentActiveIndex].statModifiers.defense > 0
+                displayedOpponentParty[displayedOpponentActiveIndex]
+                  .statModifiers.defense > 0
                   ? 'bg-green-600'
                   : 'bg-red-600'
               "
             >
               防{{
                 getStatModifierText(
-                  opponentParty[opponentActiveIndex].statModifiers.defense
+                  displayedOpponentParty[displayedOpponentActiveIndex]
+                    .statModifiers.defense
                 )
               }}
             </span>
             <span
               v-if="
-                opponentParty[opponentActiveIndex].statModifiers.magicAttack !==
-                0
+                displayedOpponentParty[displayedOpponentActiveIndex]
+                  .statModifiers.magicAttack !== 0
               "
               class="px-2 py-0.5 rounded text-xs font-bold"
               :class="
-                opponentParty[opponentActiveIndex].statModifiers.magicAttack > 0
+                displayedOpponentParty[displayedOpponentActiveIndex]
+                  .statModifiers.magicAttack > 0
                   ? 'bg-green-600'
                   : 'bg-red-600'
               "
             >
               特攻{{
                 getStatModifierText(
-                  opponentParty[opponentActiveIndex].statModifiers.magicAttack
+                  displayedOpponentParty[displayedOpponentActiveIndex]
+                    .statModifiers.magicAttack
                 )
               }}
             </span>
             <span
               v-if="
-                opponentParty[opponentActiveIndex].statModifiers
-                  .magicDefense !== 0
+                displayedOpponentParty[displayedOpponentActiveIndex]
+                  .statModifiers.magicDefense !== 0
               "
               class="px-2 py-0.5 rounded text-xs font-bold"
               :class="
-                opponentParty[opponentActiveIndex].statModifiers.magicDefense >
-                0
+                displayedOpponentParty[displayedOpponentActiveIndex]
+                  .statModifiers.magicDefense > 0
                   ? 'bg-green-600'
                   : 'bg-red-600'
               "
             >
               特防{{
                 getStatModifierText(
-                  opponentParty[opponentActiveIndex].statModifiers.magicDefense
+                  displayedOpponentParty[displayedOpponentActiveIndex]
+                    .statModifiers.magicDefense
                 )
               }}
             </span>
             <span
               v-if="
-                opponentParty[opponentActiveIndex].statModifiers.speed !== 0
+                displayedOpponentParty[displayedOpponentActiveIndex]
+                  .statModifiers.speed !== 0
               "
               class="px-2 py-0.5 rounded text-xs font-bold"
               :class="
-                opponentParty[opponentActiveIndex].statModifiers.speed > 0
+                displayedOpponentParty[displayedOpponentActiveIndex]
+                  .statModifiers.speed > 0
                   ? 'bg-green-600'
                   : 'bg-red-600'
               "
             >
               速{{
                 getStatModifierText(
-                  opponentParty[opponentActiveIndex].statModifiers.speed
+                  displayedOpponentParty[displayedOpponentActiveIndex]
+                    .statModifiers.speed
                 )
               }}
             </span>
@@ -649,11 +757,13 @@
         <!-- Party Members -->
         <div class="grid grid-cols-3 gap-1 lg:gap-2">
           <div
-            v-for="(member, index) in opponentParty"
+            v-for="(member, index) in displayedOpponentParty"
             :key="index"
             :class="[
               'p-1.5 lg:p-2 rounded text-center text-xs lg:text-sm relative group cursor-pointer',
-              index === opponentActiveIndex ? 'bg-yellow-600' : 'bg-gray-700',
+              index === displayedOpponentActiveIndex
+                ? 'bg-yellow-600'
+                : 'bg-gray-700',
               member.isFainted ? 'opacity-50' : '',
             ]"
             @click="openMonsterDetail(member.monsterId)"
@@ -671,7 +781,7 @@
 
             <!-- Hover Stats Tooltip for Party Members -->
             <div
-              v-if="member.monsterId && index !== opponentActiveIndex"
+              v-if="member.monsterId && index !== displayedOpponentActiveIndex"
               class="absolute right-0 top-full mt-2 bg-gray-900 border-2 border-red-500 rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none min-w-max hidden lg:block"
             >
               <div class="text-xs space-y-1">
@@ -719,11 +829,11 @@
 
     <!-- Battle Log -->
     <div
-      v-if="battleLog && battleLog.length > 0"
+      v-if="displayedLogs && displayedLogs.length > 0"
       class="bg-gray-800 rounded-lg p-4 mb-8 max-h-40 overflow-y-auto"
     >
       <div
-        v-for="(log, index) in battleLog.slice(-5)"
+        v-for="(log, index) in displayedLogs.slice(-5)"
         :key="index"
         class="text-sm mb-1"
         v-html="formatBattleLog(log)"
@@ -874,7 +984,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 
 const props = defineProps({
   playerParty: {
@@ -916,6 +1026,18 @@ const activePlayerMonster = computed(() => {
 
 const activeOpponentMonster = computed(() => {
   const member = props.opponentParty[props.opponentActiveIndex];
+  return member?.monsterId || null;
+});
+
+// 表示用のアクティブモンスター（演出タイミング制御用）
+const displayedActivePlayerMonster = computed(() => {
+  const member = displayedPlayerParty.value[displayedPlayerActiveIndex.value];
+  return member?.monsterId || null;
+});
+
+const displayedActiveOpponentMonster = computed(() => {
+  const member =
+    displayedOpponentParty.value[displayedOpponentActiveIndex.value];
   return member?.monsterId || null;
 });
 
@@ -1019,8 +1141,333 @@ const hasStatModifiers = (statModifiers) => {
   );
 };
 
+// バトルログの段階的表示用
+const displayedLogs = ref([]);
+const isProcessingLogs = ref(false);
+
+// アニメーション用
+const animatingMonster = ref(null);
+const damagedMonster = ref(null);
+const displayedPlayerHp = ref(0);
+const displayedOpponentHp = ref(0);
+
+// パーティの表示状態を管理
+const displayedPlayerParty = ref([]);
+const displayedOpponentParty = ref([]);
+const displayedPlayerActiveIndex = ref(0);
+const displayedOpponentActiveIndex = ref(0);
+
+// 初期化とログ処理外での同期
+const syncDisplayState = () => {
+  if (isProcessingLogs.value) return;
+
+  // プレイヤーパーティの同期
+  if (props.playerParty && props.playerParty.length > 0) {
+    displayedPlayerParty.value = JSON.parse(JSON.stringify(props.playerParty));
+    displayedPlayerActiveIndex.value = props.playerActiveIndex;
+    if (props.playerParty[props.playerActiveIndex]) {
+      displayedPlayerHp.value =
+        props.playerParty[props.playerActiveIndex].currentHp;
+    }
+  }
+
+  // 相手パーティの同期
+  if (props.opponentParty && props.opponentParty.length > 0) {
+    displayedOpponentParty.value = JSON.parse(
+      JSON.stringify(props.opponentParty)
+    );
+    displayedOpponentActiveIndex.value = props.opponentActiveIndex;
+    if (props.opponentParty[props.opponentActiveIndex]) {
+      displayedOpponentHp.value =
+        props.opponentParty[props.opponentActiveIndex].currentHp;
+    }
+  }
+};
+
+// 初期化
+watch(
+  [() => props.playerParty, () => props.opponentParty],
+  () => {
+    if (displayedPlayerParty.value.length === 0) {
+      syncDisplayState();
+    }
+  },
+  { immediate: true, deep: true }
+);
+
+// ログ処理が終わった後に状態を同期
+watch(isProcessingLogs, (processing) => {
+  if (!processing) {
+    syncDisplayState();
+  }
+});
+
+// バトルログの段階的表示処理
+watch(
+  () => props.battleLog,
+  async (newLogs) => {
+    if (!newLogs || newLogs.length === 0) {
+      displayedLogs.value = [];
+      isProcessingLogs.value = false;
+      return;
+    }
+
+    // 新しいログが追加された場合のみ処理
+    if (newLogs.length > displayedLogs.value.length) {
+      isProcessingLogs.value = true;
+
+      // 新しいログを一行ずつ表示
+      for (let i = displayedLogs.value.length; i < newLogs.length; i++) {
+        const log = newLogs[i];
+
+        // アニメーション処理
+        await processLogAnimation(log);
+
+        // ログを追加
+        displayedLogs.value.push(log);
+
+        // 0.5秒待つ
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+
+      isProcessingLogs.value = false;
+    }
+  },
+  { deep: true }
+);
+
+// ログに応じたアニメーションを実行
+const processLogAnimation = async (log) => {
+  console.log("processLogAnimation - 元のログ:", log);
+
+  // ログを文字列に変換
+  let logText = "";
+  let logSide = "";
+
+  if (typeof log === "object" && log !== null) {
+    if (log.message) {
+      logText = log.message;
+      logSide = log.side || "";
+    } else if (log.attacker && log.move) {
+      logSide = log.side || "";
+      logText = `${log.attacker}は${log.move}を使った！`;
+      if (log.damage > 0) {
+        logText += ` ${log.damage}ダメージ！`;
+      }
+    }
+  } else {
+    logText = String(log);
+  }
+
+  console.log("processLogAnimation - 変換後:", { logText, logSide });
+
+  // 攻撃アニメーション - "playerの○○の技名！" または "enemyの○○の技名！" の形式に対応
+  const attackPattern = /(player|enemy)の.+の.+！/;
+  if (
+    attackPattern.test(logText) &&
+    !logText.includes("ひんし") &&
+    !logText.includes("交代")
+  ) {
+    console.log("攻撃アニメーション判定: TRUE");
+
+    // ログテキストから攻撃側を判定
+    let side = logText.startsWith("player") ? "player" : "opponent";
+
+    console.log("攻撃アニメーション - 対象側:", side);
+
+    animatingMonster.value = side;
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    animatingMonster.value = null;
+  }
+
+  // ダメージアニメーション - 攻撃ログに含まれる場合も対応
+  if (logText.includes("ダメージ")) {
+    console.log("ダメージアニメーション判定: TRUE");
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    // ログテキストから攻撃側を判定
+    let attackerSide = logText.startsWith("player") ? "player" : "enemy";
+
+    // ダメージを受けるのは攻撃者の逆側
+    const damagedSide = attackerSide === "player" ? "opponent" : "player";
+
+    console.log(
+      "ダメージアニメーション - 攻撃側:",
+      attackerSide,
+      "被ダメージ側:",
+      damagedSide
+    );
+
+    damagedMonster.value = damagedSide;
+
+    // HPバーのアニメーション
+    if (damagedSide === "player") {
+      const targetHp =
+        props.playerParty[props.playerActiveIndex]?.currentHp || 0;
+      animateHpChange(displayedPlayerHp, targetHp);
+    } else {
+      const targetHp =
+        props.opponentParty[props.opponentActiveIndex]?.currentHp || 0;
+      animateHpChange(displayedOpponentHp, targetHp);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    damagedMonster.value = null;
+  }
+
+  // 回復アニメーション
+  if (logText.includes("回復")) {
+    let side =
+      logSide === "player" ? "player" : logSide === "enemy" ? "opponent" : null;
+
+    if (!side) {
+      side = logText.startsWith("player") ? "player" : "opponent";
+    }
+
+    if (side === "player") {
+      const targetHp =
+        props.playerParty[props.playerActiveIndex]?.currentHp || 0;
+      animateHpChange(displayedPlayerHp, targetHp);
+    } else {
+      const targetHp =
+        props.opponentParty[props.opponentActiveIndex]?.currentHp || 0;
+      animateHpChange(displayedOpponentHp, targetHp);
+    }
+  }
+
+  // ひんし状態の処理
+  if (logText.includes("ひんし") || logText.includes("倒れた")) {
+    let side =
+      logSide === "player" ? "player" : logSide === "enemy" ? "opponent" : null;
+
+    if (!side) {
+      side = logText.startsWith("player") ? "player" : "opponent";
+    }
+
+    if (side === "player") {
+      const activeIndex = displayedPlayerActiveIndex.value;
+      const newParty = [...displayedPlayerParty.value];
+      newParty[activeIndex] = {
+        ...newParty[activeIndex],
+        isFainted: true,
+        currentHp: 0,
+      };
+      displayedPlayerParty.value = newParty;
+      displayedPlayerHp.value = 0;
+    } else {
+      const activeIndex = displayedOpponentActiveIndex.value;
+      const newParty = [...displayedOpponentParty.value];
+      newParty[activeIndex] = {
+        ...newParty[activeIndex],
+        isFainted: true,
+        currentHp: 0,
+      };
+      displayedOpponentParty.value = newParty;
+      displayedOpponentHp.value = 0;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 300));
+  }
+
+  // 交代処理
+  if (logText.includes("交代") || logText.includes("出てきた")) {
+    console.log("交代処理判定: TRUE");
+
+    // 単純に現在のpropsの状態を反映（ひんし状態は保持）
+    let side =
+      logSide === "player" ? "player" : logSide === "enemy" ? "opponent" : null;
+
+    if (!side) {
+      side =
+        logText.startsWith("player") || logText.includes("player")
+          ? "player"
+          : "opponent";
+    }
+
+    console.log("交代処理 - 対象側:", side);
+
+    if (side === "player") {
+      displayedPlayerActiveIndex.value = props.playerActiveIndex;
+      const newParty = JSON.parse(JSON.stringify(props.playerParty));
+      // ひんし状態を保持
+      displayedPlayerParty.value.forEach((member, i) => {
+        if (member?.isFainted) {
+          newParty[i].isFainted = true;
+          newParty[i].currentHp = 0;
+        }
+      });
+      displayedPlayerParty.value = newParty;
+      displayedPlayerHp.value =
+        props.playerParty[props.playerActiveIndex]?.currentHp || 0;
+    } else {
+      displayedOpponentActiveIndex.value = props.opponentActiveIndex;
+      const newParty = JSON.parse(JSON.stringify(props.opponentParty));
+      // ひんし状態を保持
+      displayedOpponentParty.value.forEach((member, i) => {
+        if (member?.isFainted) {
+          newParty[i].isFainted = true;
+          newParty[i].currentHp = 0;
+        }
+      });
+      displayedOpponentParty.value = newParty;
+      displayedOpponentHp.value =
+        props.opponentParty[props.opponentActiveIndex]?.currentHp || 0;
+    }
+
+    // モンスター切り替え後に少し待つ
+    await new Promise((resolve) => setTimeout(resolve, 300));
+  }
+};
+
+// HP変化のアニメーション
+const animateHpChange = (hpRef, targetHp) => {
+  const startHp = hpRef.value;
+  const diff = targetHp - startHp;
+  const duration = 400; // ミリ秒
+  const steps = 20;
+  const stepDuration = duration / steps;
+  const stepSize = diff / steps;
+
+  let currentStep = 0;
+  const interval = setInterval(() => {
+    currentStep++;
+    if (currentStep >= steps) {
+      hpRef.value = targetHp;
+      clearInterval(interval);
+    } else {
+      hpRef.value = Math.round(startHp + stepSize * currentStep);
+    }
+  }, stepDuration);
+};
+
 const formatBattleLog = (log) => {
-  let formatted = log;
+  // オブジェクトの場合は文字列に変換
+  let formatted = "";
+
+  if (typeof log === "object" && log !== null) {
+    if (log.message) {
+      // messageプロパティがある場合はそれを使用
+      formatted = log.message;
+    } else if (log.attacker && log.move) {
+      // 攻撃ログの場合
+      const sidePrefix = log.side === "player" ? "player" : "enemy";
+      formatted = `${sidePrefix} ${log.attacker}は${log.move}を使った！`;
+
+      if (log.damage > 0) {
+        formatted += ` ${log.damage}ダメージ！`;
+      }
+
+      if (log.statusInflicted) {
+        formatted += ` ${log.statusInflicted}状態になった！`;
+      }
+    } else {
+      // その他のオブジェクト
+      formatted = JSON.stringify(log);
+    }
+  } else {
+    formatted = String(log);
+  }
 
   // Replace player with blue text
   formatted = formatted.replace(
@@ -1108,3 +1555,39 @@ const getMoveCategoryLabel = (category) => {
   return categoryLabels[category] || "物理";
 };
 </script>
+
+<style scoped>
+@keyframes monster-jump {
+  0% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-25px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes monster-flash {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  25%,
+  75% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.monster-attack {
+  animation: monster-jump 0.4s ease-in-out;
+}
+
+.monster-damage {
+  animation: monster-flash 0.6s ease-in-out;
+}
+</style>
